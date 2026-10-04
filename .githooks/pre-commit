@@ -1,0 +1,94 @@
+#!/bin/sh
+#
+# Pre-commit: run oxlint (with --fix) and oxfmt over the staged files,
+# re-stage whatever they rewrote, and block the commit if any oxlint error
+# survives the autofix.
+#
+# Enabled per clone by `git config core.hooksPath .githooks`. The
+# package.json `prepare` script runs that on every `npm install`. Bypass a
+# single commit with `git commit --no-verify`.
+#
+# POSIX sh on purpose: Git for Windows runs hooks through its own sh.
+
+set -u
+
+repo_root=$(git rev-parse --show-toplevel) || exit 1
+cd "$repo_root" || exit 1
+
+work=$(mktemp -d) || exit 1
+trap 'rm -rf "$work"' EXIT INT TERM
+
+status=0
+
+# Walk up for node_modules the way Node resolves it. A git worktree nested in
+# the main checkout (.claude/worktrees/…) has no install of its own, and taking
+# $repo_root as-is made the probe below fail and wave every commit through.
+install_root=$repo_root
+while [ ! -x "$install_root/node_modules/.bin/oxfmt" ] &&
+  [ "$install_root" != "$(dirname "$install_root")" ]; do
+  install_root=$(dirname "$install_root")
+done
+bin="$install_root/node_modules/.bin"
+
+# Deletions are excluded (--diff-filter=ACMR): there is nothing left on disk to
+# lint or format. core.quotepath=false keeps non-ASCII paths unescaped so they
+# survive the round trip through these list files.
+git -c core.quotepath=false diff --cached --name-only --diff-filter=ACMR >"$work/staged"
+[ -s "$work/staged" ] || exit 0
+
+# A file that is staged *and* dirty in the working tree cannot be handled
+# safely: the tools rewrite the working-tree copy, so `git add` would sweep the
+# unstaged hunks into the commit as well. Stop rather than guess.
+git -c core.quotepath=false diff --name-only >"$work/dirty"
+grep -Fxf "$work/dirty" "$work/staged" >"$work/partial" 2>/dev/null
+if [ -s "$work/partial" ]; then
+  echo "pre-commit: these files are only partially staged:"
+  sed 's/^/  /' "$work/partial"
+  echo
+  echo "Formatting them would pull the unstaged changes into the commit too."
+  echo "Stage them fully, stash the rest, or commit with --no-verify."
+  exit 1
+fi
+
+if [ ! -x "$bin/oxfmt" ]; then
+  echo "pre-commit: node_modules is missing, so the staged files went"
+  echo "            unchecked. Run \`npm install\` at the repo root."
+  exit 0
+fi
+
+# Runs one tool over one file list, from inside one directory.
+#   $1 directory to run in, relative to the repo root
+#   $2 executable (absolute, so the cd cannot strand it)
+#   $3 list file holding paths relative to that directory
+#   $4.. extra flags for the tool
+run_tool() {
+  rt_dir=$1
+  rt_bin=$2
+  rt_list=$3
+  shift 3
+
+  [ -s "$rt_list" ] || return 0
+
+  # Positional parameters now hold the tool's flags; append the files after
+  # them, then run the whole thing in a subshell so the cd does not stick.
+  while IFS= read -r rt_line; do
+    [ -n "$rt_line" ] && set -- "$@" "$rt_line"
+  done <"$rt_list"
+
+  ( cd "$rt_dir" && "$rt_bin" "$@" )
+}
+
+# oxlint understands the script extensions only.
+grep -Ei '\.(ts|tsx|js|jsx|mjs|cjs)$' "$work/staged" >"$work/lintable"
+run_tool . "$bin/oxlint" "$work/lintable" --fix || status=1
+
+# oxfmt runs from the repo root over every staged file, so it reads the root
+# .oxfmtrc.json and .gitignore.
+run_tool . "$bin/oxfmt" "$work/staged" --no-error-on-unmatched-pattern || status=1
+
+# Re-stage unconditionally: when the commit is about to be blocked the fixes
+# are still worth keeping, so they land in the next attempt instead of being
+# left loose in the working tree.
+run_tool . git "$work/staged" add --
+
+exit $status

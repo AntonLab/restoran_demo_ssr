@@ -1,43 +1,40 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependencies
+/node_modules/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
-
-# next.js
+# Build output
 /.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-# typescript
 *.tsbuildinfo
 next-env.d.ts
 
-.fallow
+# Tests
+/coverage/
+
+# Env: secrets stay local, the template is committed
+.env*
+!.env.example
+
+# Runtime data: image uploads, served by a route handler
+/uploads/
+
+# Logs and OS files
+npm-debug.log*
+.DS_Store
+*.pem
+
+# Tool caches
+/.fallow/
+/.playwright-mcp/
+/.superpowers/
+
+# Claude Code, per clone: restored skills, agents, worktrees, local settings
+/.agents/
+/.claude/agents/
+/.claude/skills/*
+!/.claude/skills/db-reset/
+/.claude/worktrees/
+/.claude/settings.local.json
+
+# Docs: agent scratch, except real docs
+/docs/*
+!/docs/agents/
+!/docs/adr/
