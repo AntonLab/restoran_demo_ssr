@@ -5,11 +5,10 @@ import { connectDb } from "@/server/db";
 import { nextNumber } from "@/server/counter";
 import { Complaint } from "@/server/models/complaint";
 import { Review } from "@/server/models/review";
-import { createRateLimiter } from "@/server/rate-limit";
+import { createRateLimiter, formatRetry, type Limiter } from "@/server/rate-limit";
 
 export type FieldErrors = Record<string, string[]>;
 type Failure = { ok: false; error: string; fieldErrors?: FieldErrors };
-type Limiter = ReturnType<typeof createRateLimiter>;
 
 const limiterOptions = { limit: 5, windowMs: 3_600_000 };
 export const reviewLimiter = createRateLimiter(limiterOptions);
@@ -40,11 +39,10 @@ function guard<T extends z.ZodType>(
   }
   const hit = limiter.hit(ip);
   if (!hit.ok) {
-    const minutes = Math.max(1, Math.ceil(hit.retryAfterMs / 60_000));
     return {
       failure: {
         ok: false,
-        error: `Too many submissions. Try again in ${minutes} ${minutes === 1 ? "minute" : "minutes"}.`,
+        error: `Too many submissions. Try again in ${formatRetry(hit.retryAfterMs)}.`,
       },
     };
   }

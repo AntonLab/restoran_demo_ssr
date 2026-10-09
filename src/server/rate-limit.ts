@@ -1,5 +1,12 @@
 type Options = { limit: number; windowMs: number; now?: () => number };
 
+export type Limiter = ReturnType<typeof createRateLimiter>;
+
+export function formatRetry(retryAfterMs: number): string {
+  const minutes = Math.max(1, Math.ceil(retryAfterMs / 60_000));
+  return `${minutes} ${minutes === 1 ? "minute" : "minutes"}`;
+}
+
 // In-memory by design: one Node process, no persistence across restarts.
 export function createRateLimiter({ limit, windowMs, now = Date.now }: Options) {
   const hits = new Map<string, number[]>();
