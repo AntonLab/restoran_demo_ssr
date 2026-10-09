@@ -13,14 +13,14 @@ export const loginLimiter = createRateLimiter({ limit: 10, windowMs: 900_000 });
 
 const INVALID_CREDENTIALS = "Invalid email or password";
 
-const fieldFailure = (fieldErrors: FieldErrors): AccountFailure => ({
+export const fieldFailure = (fieldErrors: FieldErrors): AccountFailure => ({
   ok: false,
   error: "Please fix the highlighted fields.",
   fieldErrors,
 });
 
 // Validate before limiter.hit: invalid input must not spend a hit.
-function guard<T extends z.ZodType>(
+export function guard<T extends z.ZodType>(
   schema: T,
   input: unknown,
   limiter: Limiter,
