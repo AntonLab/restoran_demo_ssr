@@ -9,28 +9,56 @@
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt",
-    "format:check": "oxfmt --check"
+    "format:check": "oxfmt --check",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepare": "git config core.hooksPath .githooks",
+    "skills": "skills experimental_install && node scripts/link-skills.mjs",
+    "worktree": "node scripts/worktree.mjs",
+    "seed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local --import ./scripts/register-alias.mjs seed/run.ts",
+    "branch:check": "node scripts/branch-check.mjs",
+    "tokens": "node scripts/tokens.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.8.0",
+    "@dnd-kit/core": "6.3.1",
+    "@dnd-kit/sortable": "10.0.0",
+    "@dnd-kit/utilities": "3.2.2",
+    "bcrypt": "6.0.0",
     "class-variance-authority": "0.7.1",
     "cn": "0.4.0",
     "lucide-react": "1.49.0",
+    "mongoose": "9.10.4",
     "next": "16.3.8",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "shadcn": "4.21.1",
-    "tw-animate-css": "1.4.0"
+    "sharp": "0.35.5",
+    "tw-animate-css": "1.4.0",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4",
-    "@types/node": "20",
+    "@types/bcrypt": "6.0.0",
+    "@types/node": "24",
     "@types/react": "19",
     "@types/react-dom": "19",
     "babel-plugin-react-compiler": "1.0.0",
+    "mongodb-memory-server": "11.3.0",
     "oxfmt": "0.71.0",
     "oxlint": "1.86.0",
+    "skills": "^1.7.0",
     "tailwindcss": "4",
-    "typescript": "5"
+    "typescript": "5",
+    "vite-tsconfig-paths": "6.1.1",
+    "vitest": "5.0.3"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "allowScripts": {
+    "bcrypt": false,
+    "mongodb-memory-server": false
   }
 }
