@@ -1,12 +1,13 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { clientIp } from "@/lib/client-ip";
 import { authenticate, registerUser, type AccountFailure } from "@/server/accounts";
 import { postLoginPath } from "@/server/auth/next-path";
 import { createSession, revokeSession } from "@/server/auth/session";
+import { SESSION_COOKIE } from "@/server/auth/session-store";
 import { getEnv } from "@/server/env";
 import type { FieldErrors } from "@/server/feedback";
 import { getMailDelivery } from "@/server/mail";
@@ -77,5 +78,7 @@ export async function resetPasswordAction(
 ): Promise<AuthFormState> {
   const result = await resetPassword(Object.fromEntries(formData));
   if (!result.ok) return failed(result);
+  // The reset deleted every Session; clearing the cookie also makes Next refresh the cached header.
+  (await cookies()).delete(SESSION_COOKIE);
   redirect("/login?reset=1");
 }
