@@ -10,18 +10,24 @@ const date = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
 
 export function ReviewsList({ initial, total }: { initial: PublicReview[]; total: number }) {
   const [list, setList] = useState(initial);
+  const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
 
   if (list.length === 0)
     return <p className="text-muted-foreground">No reviews yet. Be the first!</p>;
 
   function showMore() {
+    setFailed(false);
     startTransition(async () => {
-      const more = await loadMoreReviews(list.length);
-      setList((cur) => {
-        const seen = new Set(cur.map((r) => r.id));
-        return [...cur, ...more.reviews.filter((r) => !seen.has(r.id))];
-      });
+      try {
+        const more = await loadMoreReviews(list.length);
+        setList((cur) => {
+          const seen = new Set(cur.map((r) => r.id));
+          return [...cur, ...more.reviews.filter((r) => !seen.has(r.id))];
+        });
+      } catch {
+        setFailed(true);
+      }
     });
   }
 
@@ -39,6 +45,11 @@ export function ReviewsList({ initial, total }: { initial: PublicReview[]; total
           </li>
         ))}
       </ul>
+      {failed && (
+        <p role="alert" className="self-center text-sm text-destructive">
+          Could not load more reviews. Try again.
+        </p>
+      )}
       {list.length < total && (
         <Button variant="outline" disabled={pending} onClick={showMore} className="self-center">
           Show more

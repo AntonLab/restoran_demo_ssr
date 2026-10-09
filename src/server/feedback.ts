@@ -73,6 +73,7 @@ export async function submitComplaint(
   const checked = guard(complaintInputSchema, input, ip, limiter);
   if ("failure" in checked) return checked.failure;
   await connectDb();
+  // Gaps are acceptable: a failed create burns a number; a transaction needs a replica set.
   const number = await nextNumber("complaint");
   await Complaint.create({ ...checked.data, number });
   return { ok: true, number };

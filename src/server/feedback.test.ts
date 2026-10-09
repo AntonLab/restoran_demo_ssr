@@ -84,6 +84,15 @@ describe("submitComplaint", () => {
     expect(!noContact.ok && noContact.fieldErrors).toHaveProperty("contact");
     expect(await Complaint.countDocuments()).toBe(0);
   });
+  test("rejects a reason over 1000 characters", async () => {
+    const tooLong = await submitComplaint(
+      { text: "x".repeat(1001), contact: "a@b.c" },
+      "5.5.5.5",
+      fresh(),
+    );
+    expect(!tooLong.ok && tooLong.fieldErrors).toHaveProperty("text");
+    expect(await Complaint.countDocuments()).toBe(0);
+  });
   test("honeypot gives silent success with Number 0 and stores nothing", async () => {
     expect(await submitComplaint({ ...complaint, hp_site: "x" }, "5.5.5.5", fresh())).toEqual({
       ok: true,

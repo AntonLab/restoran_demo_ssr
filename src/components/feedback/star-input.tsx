@@ -3,6 +3,7 @@
 import { Star } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { cn } from "cn";
+import { starForKey } from "@/lib/ratings";
 
 const STARS = [1, 2, 3, 4, 5];
 
@@ -17,22 +18,16 @@ export function StarInput({
   value: number;
   onChange(v: number): void;
 }) {
-  function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    const step =
-      e.key === "ArrowRight" || e.key === "ArrowUp"
-        ? 1
-        : e.key === "ArrowLeft" || e.key === "ArrowDown"
-          ? -1
-          : 0;
-    if (!step) return;
+  function onKeyDown(e: KeyboardEvent<HTMLButtonElement>) {
+    const next = starForKey(e.key, value);
+    if (next === null) return;
     e.preventDefault();
-    const next = Math.min(5, Math.max(1, value + step));
     onChange(next);
-    e.currentTarget.querySelectorAll<HTMLButtonElement>("button")[next - 1]?.focus();
+    e.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>("button")[next - 1]?.focus();
   }
 
   return (
-    <div role="radiogroup" tabIndex={-1} aria-label={label} onKeyDown={onKeyDown} className="flex">
+    <div role="radiogroup" aria-label={label} className="flex">
       {STARS.map((n) => (
         <button
           key={n}
@@ -44,6 +39,7 @@ export function StarInput({
           aria-label={`${n} stars`}
           tabIndex={value === n || (value === 0 && n === 1) ? 0 : -1}
           onClick={() => onChange(n)}
+          onKeyDown={onKeyDown}
           className="flex size-9 items-center justify-center rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <Star
