@@ -22,11 +22,17 @@ export default async function Page({ searchParams }: PageProps<"/menu">) {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-10">
       <h1 className="mb-6 text-4xl font-bold">Menu</h1>
-      <div className="grid gap-6 lg:grid-cols-[12rem_minmax(0,1fr)_16rem]">
-        <aside className="order-1 lg:order-none bg-background/95 sticky top-14 z-30 -mx-4 overflow-x-auto px-4 py-2 backdrop-blur lg:top-20 lg:z-auto lg:mx-0 lg:self-start lg:overflow-visible lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[12rem_minmax(0,1fr)_16rem]">
+        <aside className="bg-background/95 sticky top-14 z-30 -mx-4 overflow-x-auto px-4 py-2 backdrop-blur lg:top-20 lg:z-auto lg:mx-0 lg:self-start lg:overflow-visible lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
           <SectionNav sections={navItems} />
         </aside>
-        <div className="order-3 flex min-w-0 flex-col gap-10 lg:order-none">
+        <div className="lg:col-start-3 lg:row-start-1 lg:sticky lg:top-20 lg:self-start">
+          <MenuFilters filters={filters} />
+          <div className="mt-6 hidden lg:block">
+            <VenueBlock settings={settings} />
+          </div>
+        </div>
+        <div className="flex min-w-0 flex-col gap-10 lg:col-start-2 lg:row-start-1">
           {sections.length === 0 ? (
             <div className="flex flex-col items-start gap-3">
               <h2 className="text-2xl font-semibold">No dishes match</h2>
@@ -54,13 +60,8 @@ export default async function Page({ searchParams }: PageProps<"/menu">) {
             ))
           )}
         </div>
-        <div className="contents lg:sticky lg:top-20 lg:flex lg:flex-col lg:gap-6 lg:self-start">
-          <div className="order-2 lg:order-none">
-            <MenuFilters filters={filters} />
-          </div>
-          <div className="order-4 lg:order-none">
-            <VenueBlock settings={settings} />
-          </div>
+        <div className="lg:hidden">
+          <VenueBlock settings={settings} />
         </div>
       </div>
     </div>

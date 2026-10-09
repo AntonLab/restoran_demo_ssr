@@ -32,7 +32,7 @@ export function MenuFilters({ filters }: { filters: Filters }) {
         key={serializeMenuParams(filters)}
         method="get"
         action="/menu"
-        className={cn("mt-3 flex flex-col gap-3 lg:mt-0 lg:flex", !open && "hidden")}
+        className={cn("mt-3 flex flex-col gap-3 lg:mt-0", open ? "flex" : "hidden lg:flex")}
       >
         <div className="flex flex-col gap-1">
           <label htmlFor="filter-q" className="text-sm font-medium">
