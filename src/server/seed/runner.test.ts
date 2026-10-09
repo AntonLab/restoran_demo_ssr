@@ -4,7 +4,14 @@ import { expect, test } from "vitest";
 const run = (code: string) =>
   execFileSync(
     process.execPath,
-    ["--import", "./scripts/register-alias.mjs", "--input-type=module", "-e", code],
+    [
+      "--disable-warning=MODULE_TYPELESS_PACKAGE_JSON",
+      "--import",
+      "./scripts/register-alias.mjs",
+      "--input-type=module",
+      "-e",
+      code,
+    ],
     { cwd: process.cwd(), encoding: "utf8" },
   ).trim();
 
