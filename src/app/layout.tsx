@@ -17,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: { default: name, template: `%s | ${name}` }, description };
 }
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children, modal }: LayoutProps<"/">) {
   await connection();
   const settings = await getSettings();
   return (
@@ -26,6 +26,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <Header siteName={settings.name} />
         <main className="flex-1">{children}</main>
         <Footer settings={settings} />
+        {modal}
       </body>
     </html>
   );

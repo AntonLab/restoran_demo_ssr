@@ -20,6 +20,7 @@ export function DishCard({ dish }: { dish: DishCardData }) {
         <h3 className="font-semibold">
           <Link
             href={`/menu/dish/${dish.id}`}
+            scroll={false}
             className="after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-3 focus-visible:after:ring-inset focus-visible:after:ring-ring/50"
           >
             {dish.name}
