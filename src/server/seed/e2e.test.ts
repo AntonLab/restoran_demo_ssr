@@ -2,10 +2,13 @@ import { execFileSync } from "node:child_process";
 import { mkdtemp, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { SEED_DISHES } from "@/server/seed/catalog";
 import { Dish } from "@/server/models/dish";
 import { startTestDb, stopTestDb } from "@/server/test/db";
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
 let uri: string;
 beforeAll(async () => {
@@ -31,7 +34,7 @@ test("npm run seed twice leaves one copy of everything and serves real images", 
         "./scripts/register-alias.mjs",
         "seed/run.ts",
       ],
-      { env, encoding: "utf8" },
+      { cwd: repoRoot, env, encoding: "utf8" },
     );
   seed();
   seed();

@@ -19,6 +19,12 @@ describe("seed images", () => {
   test("CREDITS.md names every file with a source URL", async () => {
     const credits = await readFile(path.join(dir, "CREDITS.md"), "utf8");
     for (const d of SEED_DISHES) expect(credits).toContain(d.image);
-    expect(credits).toMatch(/https:\/\/(unsplash\.com|www\.pexels\.com)\//);
+    const rows = credits.split("\n").filter((line) => /^\| \S+\.jpg /.test(line));
+    expect(rows.length).toBeGreaterThanOrEqual(SEED_DISHES.length);
+    for (const row of rows) {
+      const [, file, , author, url] = row.split("|").map((cell) => cell.trim());
+      expect(author, file).not.toBe("");
+      expect(["unsplash.com", "www.pexels.com"], file).toContain(new URL(url).hostname);
+    }
   });
 });

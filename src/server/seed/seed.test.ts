@@ -9,7 +9,7 @@ import { Dish } from "@/server/models/dish";
 import { Review } from "@/server/models/review";
 import { Settings } from "@/server/models/settings";
 import { User } from "@/server/models/user";
-import { SEED_DISHES } from "@/server/seed/catalog";
+import { SEED_DISHES, SEED_REVIEWS } from "@/server/seed/catalog";
 import { runSeed } from "@/server/seed/seed";
 import { clearTestDb, startTestDb, stopTestDb } from "@/server/test/db";
 
@@ -33,6 +33,12 @@ beforeEach(async () => {
 
 const admin = { adminEmail: "Admin@Example.com", adminPassword: "s3cret-pass" };
 const opts = () => ({ imagesDir, uploadsDir, ...admin });
+
+async function expectNothingSeeded() {
+  for (const model of [Category, Dish, Review, Settings, User]) {
+    expect(await model.countDocuments(), model.modelName).toBe(0);
+  }
+}
 
 describe("runSeed", () => {
   test("creates Settings, 12 Categories, Dishes with images, approved Reviews and the Admin", async () => {
@@ -65,6 +71,21 @@ describe("runSeed", () => {
     expect((await Dish.findOne({ name: SEED_DISHES[0].name }).lean())?.priceCents).toBe(1);
     expect((await Settings.findOne().lean())?.name).toBe("Renamed");
   });
+  test("leaves an existing Admin's password hash untouched", async () => {
+    await runSeed(opts());
+    const before = (await User.findOne({ role: "admin" }).lean())?.passwordHash;
+    expect(await runSeed({ ...opts(), adminPassword: "another-pass" })).toMatchObject({
+      admin: "exists",
+    });
+    expect((await User.findOne({ role: "admin" }).lean())?.passwordHash).toBe(before);
+  });
+  test("matches Reviews by text, so a re-seed adds no duplicates", async () => {
+    await runSeed(opts());
+    await Review.deleteOne({ text: SEED_REVIEWS[0].text });
+    await runSeed(opts());
+    expect(await Review.countDocuments()).toBe(SEED_REVIEWS.length);
+    expect(await Review.countDocuments({ text: SEED_REVIEWS[0].text })).toBe(1);
+  });
   test("removes the written images and rethrows when creating a Dish fails", async () => {
     const failure = new Error("insert failed");
     const create = vi.spyOn(Dish, "create").mockRejectedValueOnce(failure as never);
@@ -78,13 +99,13 @@ describe("runSeed", () => {
       await expect(runSeed({ ...opts(), ...missing })).rejects.toThrow(
         /ADMIN_EMAIL|ADMIN_PASSWORD/,
       );
-      expect(await Category.countDocuments()).toBe(0);
+      await expectNothingSeeded();
     },
   );
   test("fails before writing when a seed image is missing and names the file", async () => {
     const empty = await mkdtemp(path.join(tmpdir(), "seed-empty-"));
     await expect(runSeed({ ...opts(), imagesDir: empty })).rejects.toThrow(SEED_DISHES[0].image);
-    expect(await Category.countDocuments()).toBe(0);
+    await expectNothingSeeded();
     expect(await readdir(uploadsDir)).toHaveLength(0);
   });
 });
