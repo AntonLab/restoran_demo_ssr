@@ -16,6 +16,7 @@
     "prepare": "git config core.hooksPath .githooks",
     "skills": "skills experimental_install && node scripts/link-skills.mjs",
     "worktree": "node scripts/worktree.mjs",
+    "seed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.local --import ./scripts/register-alias.mjs seed/run.ts",
     "branch:check": "node scripts/branch-check.mjs",
     "tokens": "node scripts/tokens.mjs"
   },
