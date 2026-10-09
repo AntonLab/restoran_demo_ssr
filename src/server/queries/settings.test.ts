@@ -12,6 +12,11 @@ test("falls back to defaults when the seed has not run", async () => {
   expect((await getSettings()).name).toBe("Verde Kitchen");
 });
 
+test("defaults are a fresh copy per call", async () => {
+  (await getSettings()).name = "Mutated";
+  expect((await getSettings()).name).toBe("Verde Kitchen");
+});
+
 test("returns the stored document as a plain object", async () => {
   await Settings.create({ ...DEFAULT_SETTINGS, name: "Other Place" });
   const s = await getSettings();

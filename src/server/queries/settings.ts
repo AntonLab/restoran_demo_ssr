@@ -19,7 +19,7 @@ export type SettingsData = {
 export const getSettings = cache(async (): Promise<SettingsData> => {
   await connectDb();
   const s = await Settings.findOne().lean();
-  if (!s) return DEFAULT_SETTINGS;
+  if (!s) return structuredClone(DEFAULT_SETTINGS);
   return {
     name: s.name,
     description: s.description ?? "",

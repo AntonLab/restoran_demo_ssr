@@ -3,8 +3,12 @@ import { Counter } from "@/server/models/counter";
 
 const DUPLICATE_KEY = 11000;
 
-export async function nextNumber(key: string, retry = true): Promise<number> {
+export async function nextNumber(key: string): Promise<number> {
   await connectDb();
+  return increment(key, true);
+}
+
+async function increment(key: string, retry: boolean): Promise<number> {
   try {
     const doc = await Counter.findOneAndUpdate(
       { key },
@@ -14,7 +18,7 @@ export async function nextNumber(key: string, retry = true): Promise<number> {
     return doc.value;
   } catch (error) {
     // Two concurrent upserts of a new key race on the unique index; the loser retries as a plain update.
-    if (retry && (error as { code?: number }).code === DUPLICATE_KEY) return nextNumber(key, false);
+    if (retry && (error as { code?: number }).code === DUPLICATE_KEY) return increment(key, false);
     throw error;
   }
 }

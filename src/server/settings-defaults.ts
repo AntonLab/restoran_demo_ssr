@@ -20,7 +20,7 @@ export const DEFAULT_SETTINGS = {
     weekday("Fri"),
     weekday("Sat"),
     { day: "Sun", open: "11:00", close: "20:00", closed: false },
-  ] as ScheduleDay[],
+  ] satisfies ScheduleDay[],
   socials: [
     { label: "Instagram", url: "https://example.com/verde-kitchen-instagram" },
     { label: "Facebook", url: "https://example.com/verde-kitchen-facebook" },

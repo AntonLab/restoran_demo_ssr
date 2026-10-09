@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest";
 import mongoose from "mongoose";
+import { Category } from "@/server/models/category";
 import { Complaint } from "@/server/models/complaint";
 import { Dish } from "@/server/models/dish";
 import { Review } from "@/server/models/review";
@@ -35,6 +36,14 @@ describe("Dish", () => {
   });
   test.each([8.5, -1, Number.NaN])("rejects priceCents %s", async (priceCents) => {
     await expect(new Dish({ ...dish, priceCents }).validate()).rejects.toThrow();
+  });
+});
+
+describe("Category", () => {
+  test("name is unique", async () => {
+    await Category.init();
+    await Category.create({ name: "Soups" });
+    await expect(Category.create({ name: "Soups" })).rejects.toThrow();
   });
 });
 
@@ -75,6 +84,24 @@ describe("Settings", () => {
     await new Settings(DEFAULT_SETTINGS).validate();
     expect(DEFAULT_SETTINGS.name).toBe("Verde Kitchen");
     expect(DEFAULT_SETTINGS.schedule).toHaveLength(7);
+  });
+  test.each(["Mars/Base", "", "nope"])("rejects timezone %j", async (timezone) => {
+    await expect(new Settings({ ...DEFAULT_SETTINGS, timezone }).validate()).rejects.toThrow();
+  });
+  test.each(["24:00", "9:00", "10:60", "ab:cd", "10:00:00"])("rejects time %s", async (time) => {
+    const [first, ...rest] = DEFAULT_SETTINGS.schedule;
+    await expect(
+      new Settings({
+        ...DEFAULT_SETTINGS,
+        schedule: [{ ...first, open: time }, ...rest],
+      }).validate(),
+    ).rejects.toThrow();
+    await expect(
+      new Settings({
+        ...DEFAULT_SETTINGS,
+        schedule: [{ ...first, close: time }, ...rest],
+      }).validate(),
+    ).rejects.toThrow();
   });
   test("rejects a schedule that is not 7 days", async () => {
     const bad = { ...DEFAULT_SETTINGS, schedule: DEFAULT_SETTINGS.schedule.slice(0, 6) };

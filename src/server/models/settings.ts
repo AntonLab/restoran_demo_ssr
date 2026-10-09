@@ -1,11 +1,30 @@
-import mongoose, { Schema, type InferSchemaType, type Model } from "mongoose";
+import mongoose, {
+  Schema,
+  type InferSchemaType,
+  type Model,
+  type SchemaDefinitionProperty,
+} from "mongoose";
 import { WEEKDAYS } from "@/lib/weekdays";
+
+const time = {
+  type: String,
+  required: true,
+  match: [/^([01]\d|2[0-3]):[0-5]\d$/, "time must be HH:mm"],
+} satisfies SchemaDefinitionProperty<string>;
+
+const isTimeZone = (zone: string) => {
+  try {
+    return Boolean(Intl.DateTimeFormat(undefined, { timeZone: zone }));
+  } catch {
+    return false;
+  }
+};
 
 const scheduleDaySchema = new Schema(
   {
     day: { type: String, enum: WEEKDAYS, required: true },
-    open: { type: String, required: true },
-    close: { type: String, required: true },
+    open: time,
+    close: time,
     closed: { type: Boolean, default: false },
   },
   { _id: false },
@@ -30,7 +49,11 @@ const settingsSchema = new Schema(
         { _id: false },
       ),
     ],
-    timezone: { type: String, required: true },
+    timezone: {
+      type: String,
+      required: true,
+      validate: { validator: isTimeZone, message: "timezone must be an IANA zone" },
+    },
     maxConcurrentBookings: { type: Number, required: true, min: 1, validate: Number.isInteger },
   },
   { timestamps: true },
