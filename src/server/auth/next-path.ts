@@ -8,7 +8,11 @@ export function safeNext(value: unknown): string {
   return value;
 }
 
+const AUTH_PAGE = /^\/(login|register|forgot-password|reset-password)(?=[/?#]|$)/;
+
 export function postLoginPath(next: unknown, role: "user" | "admin"): string {
-  if (typeof next === "string" && next !== "") return safeNext(next);
+  const safe = typeof next === "string" && next !== "" ? safeNext(next) : null;
+  // Returning to an auth page would bounce a signed-in visitor back here in a redirect loop.
+  if (safe && !AUTH_PAGE.test(safe)) return safe;
   return role === "admin" ? "/admin" : "/account";
 }
