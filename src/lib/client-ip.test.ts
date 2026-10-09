@@ -1,15 +1,34 @@
-import { expect, test } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import { clientIp } from "@/lib/client-ip";
 
 const h = (v: string | null) => ({ get: () => v });
 
+afterEach(() => vi.unstubAllEnvs());
+
+test("ignores a spoofed header when TRUST_PROXY is unset", () => {
+  vi.stubEnv("TRUST_PROXY", "");
+  expect(clientIp(h("6.6.6.6"))).toBe("local");
+});
+
+test.each(["0", "-1", "1.5", "x"])("TRUST_PROXY=%j is invalid and gives local", (value) => {
+  vi.stubEnv("TRUST_PROXY", value);
+  expect(clientIp(h("a, b"))).toBe("local");
+});
+
 test.each([
-  ["203.0.113.7", "203.0.113.7"],
-  ["203.0.113.7, 10.0.0.1, 10.0.0.2", "203.0.113.7"],
-  ["  198.51.100.4 , 10.0.0.1", "198.51.100.4"],
-  ["", "unknown"],
-  ["   ", "unknown"],
-  [null, "unknown"],
-])("clientIp(%j) = %s", (value, expected) => {
-  expect(clientIp(h(value))).toBe(expected);
+  ["1", "a, b", "b"],
+  ["2", "a, b, c", "b"],
+  ["2", "  a ,  b  , c", "b"],
+])("TRUST_PROXY=%s with %j gives %s", (hops, header, expected) => {
+  vi.stubEnv("TRUST_PROXY", hops);
+  expect(clientIp(h(header))).toBe(expected);
+});
+
+test.each([
+  ["3", "a, b"],
+  ["1", null],
+  ["1", ""],
+])("TRUST_PROXY=%s with %j gives local", (hops, header) => {
+  vi.stubEnv("TRUST_PROXY", hops);
+  expect(clientIp(h(header))).toBe("local");
 });
