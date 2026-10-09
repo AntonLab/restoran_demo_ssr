@@ -7,3 +7,8 @@ export function safeNext(value: unknown): string {
   }
   return value;
 }
+
+export function postLoginPath(next: unknown, role: "user" | "admin"): string {
+  if (typeof next === "string" && next !== "") return safeNext(next);
+  return role === "admin" ? "/admin" : "/account";
+}

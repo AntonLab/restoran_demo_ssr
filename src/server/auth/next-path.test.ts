@@ -1,5 +1,15 @@
 import { expect, test } from "vitest";
-import { safeNext } from "@/server/auth/next-path";
+import { postLoginPath, safeNext } from "@/server/auth/next-path";
+
+test.each([
+  [undefined, "user", "/account"],
+  ["", "admin", "/admin"],
+  ["/menu?q=a", "user", "/menu?q=a"],
+  ["//evil.com", "admin", "/"],
+  ["https://evil.com", "user", "/"],
+])("postLoginPath(%j, %s) is %s", (next, role, expected) => {
+  expect(postLoginPath(next, role as "user" | "admin")).toBe(expected);
+});
 
 test.each(["/", "/account", "/menu?q=a%20b&sort=popular#top", "/menu/dish/abc"])(
   "keeps %j",
