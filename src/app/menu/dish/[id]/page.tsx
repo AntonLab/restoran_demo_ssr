@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { loadDish } from "@/app/menu/dish/[id]/load-dish";
 import { DishDetailView } from "@/components/menu/dish-detail-view";
+import { getViewer } from "@/server/auth/get-viewer";
 
 export async function generateMetadata({
   params,
@@ -14,6 +15,7 @@ export async function generateMetadata({
 export default async function Page({ params }: PageProps<"/menu/dish/[id]">) {
   const dish = await loadDish(params);
   if (!dish) notFound();
+  const viewer = await getViewer();
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-6">
       <Link
@@ -22,7 +24,7 @@ export default async function Page({ params }: PageProps<"/menu/dish/[id]">) {
       >
         Back to menu
       </Link>
-      <DishDetailView dish={dish} />
+      <DishDetailView dish={dish} viewer={viewer} />
     </div>
   );
 }

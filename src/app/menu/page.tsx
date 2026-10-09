@@ -8,6 +8,7 @@ import { VenueBlock } from "@/components/menu/venue-block";
 import { buttonVariants } from "@/components/ui/button";
 import { hasActiveFilters, parseMenuParams } from "@/lib/menu-params";
 import { sectionAnchor } from "@/lib/menu-view";
+import { getViewer } from "@/server/auth/get-viewer";
 import { getMenuSections } from "@/server/queries/menu";
 import { getSettings } from "@/server/queries/settings";
 
@@ -16,7 +17,11 @@ export const metadata: Metadata = { title: "Menu" };
 export default async function Page({ searchParams }: PageProps<"/menu">) {
   await connection();
   const filters = parseMenuParams(await searchParams);
-  const [sections, settings] = await Promise.all([getMenuSections(filters), getSettings()]);
+  const [sections, settings, viewer] = await Promise.all([
+    getMenuSections(filters),
+    getSettings(),
+    getViewer(),
+  ]);
   const navItems = sections.map(({ key, title }) => ({ key, title }));
 
   return (
@@ -49,7 +54,7 @@ export default async function Page({ searchParams }: PageProps<"/menu">) {
                 <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {dishes.map((dish, i) => (
                     <li key={dish.id}>
-                      <DishCard dish={dish} eager={s === 0 && i === 0} />
+                      <DishCard dish={dish} viewer={viewer} eager={s === 0 && i === 0} />
                     </li>
                   ))}
                 </ul>
