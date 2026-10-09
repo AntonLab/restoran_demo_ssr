@@ -24,9 +24,9 @@ export function PopularCarousel({ dishes }: { dishes: DishCardData[] }) {
         className="snap-x snap-mandatory overflow-x-auto pb-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <ul className="flex w-max gap-4">
-          {dishes.map((dish) => (
+          {dishes.map((dish, i) => (
             <li key={dish.id} className="w-64 snap-start">
-              <DishCard dish={dish} />
+              <DishCard dish={dish} eager={i === 0} />
             </li>
           ))}
         </ul>

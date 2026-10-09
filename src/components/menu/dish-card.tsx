@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
 import type { DishCardData } from "@/server/queries/menu";
 
-export function DishCard({ dish }: { dish: DishCardData }) {
+export function DishCard({ dish, eager = false }: { dish: DishCardData; eager?: boolean }) {
   return (
     <article className="relative flex h-full flex-col overflow-hidden rounded-xl border bg-card text-card-foreground">
       <Image
@@ -13,6 +13,7 @@ export function DishCard({ dish }: { dish: DishCardData }) {
         width={400}
         height={300}
         unoptimized
+        loading={eager ? "eager" : "lazy"}
         alt={dish.name}
         className="aspect-[4/3] w-full object-cover"
       />

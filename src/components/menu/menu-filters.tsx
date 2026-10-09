@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { MENU_SORTS, serializeMenuParams, type MenuFilters as Filters } from "@/lib/menu-params";
@@ -14,6 +15,7 @@ const dollars = (cents: number | null) => (cents === null ? "" : String(cents / 
 
 export function MenuFilters({ filters }: { filters: Filters }) {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
 
   return (
     <div>
@@ -32,6 +34,14 @@ export function MenuFilters({ filters }: { filters: Filters }) {
         key={serializeMenuParams(filters)}
         method="get"
         action="/menu"
+        // A plain GET submit sends empty fields as `min=`; rebuild the URL without them.
+        onSubmit={(e) => {
+          e.preventDefault();
+          const params = new URLSearchParams();
+          for (const [k, v] of new FormData(e.currentTarget))
+            if (v !== "") params.set(k, String(v));
+          router.push(`/menu?${params}`);
+        }}
         className={cn("mt-3 flex flex-col gap-3 lg:mt-0", open ? "flex" : "hidden lg:flex")}
       >
         <div className="flex flex-col gap-1">

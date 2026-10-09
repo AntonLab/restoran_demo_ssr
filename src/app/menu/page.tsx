@@ -43,13 +43,13 @@ export default async function Page({ searchParams }: PageProps<"/menu">) {
               )}
             </div>
           ) : (
-            sections.map(({ key, title, dishes }) => (
+            sections.map(({ key, title, dishes }, s) => (
               <section key={key} id={sectionAnchor(key)} className="scroll-mt-32">
                 <h2 className="mb-4 text-2xl font-semibold">{title}</h2>
                 <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {dishes.map((dish) => (
+                  {dishes.map((dish, i) => (
                     <li key={dish.id}>
-                      <DishCard dish={dish} />
+                      <DishCard dish={dish} eager={s === 0 && i === 0} />
                     </li>
                   ))}
                 </ul>
