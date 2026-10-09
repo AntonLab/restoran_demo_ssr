@@ -24,6 +24,17 @@ test("frees a slot when the oldest hit leaves the window", () => {
   expect(limiter.hit("k").ok).toBe(true);
 });
 
+test("drops keys whose hits have all left the window", () => {
+  let t = 0;
+  const limiter = createRateLimiter({ limit: 2, windowMs: 1000, now: () => t });
+  limiter.hit("a");
+  limiter.hit("b");
+  expect(limiter.size()).toBe(2);
+  t = 1001;
+  limiter.hit("c");
+  expect(limiter.size()).toBe(1);
+});
+
 test("refused calls are not counted", () => {
   let t = 0;
   const limiter = createRateLimiter({ limit: 1, windowMs: 1000, now: () => t });

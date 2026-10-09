@@ -26,7 +26,10 @@ function toCents(v: string | string[] | undefined): number | null {
   const s = first(v)?.trim();
   if (!s) return null;
   const n = Number(s);
-  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : null;
+  if (!(n >= 0)) return null;
+  // Finite input like "1e307" overflows to Infinity after * 100.
+  const cents = Math.round(n * 100);
+  return Number.isSafeInteger(cents) ? cents : null;
 }
 
 export function parseMenuParams(sp: SearchParams): MenuFilters {

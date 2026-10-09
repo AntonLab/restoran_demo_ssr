@@ -26,7 +26,11 @@ describe("parseMenuParams", () => {
     [{ min: "" }, null],
     [{ min: "-5" }, null],
     [{ min: "Infinity" }, null],
-  ])("junk price %j gives null", (sp, expected) => {
+    [{ min: "1e307" }, null],
+    [{ min: "   " }, null],
+    [{ min: "0x10" }, 1600],
+    [{ min: "1e2" }, 10000],
+  ])("price %j gives %s cents", (sp, expected) => {
     expect(parseMenuParams(sp).minCents).toBe(expected);
   });
   test("swaps a reversed range", () => {

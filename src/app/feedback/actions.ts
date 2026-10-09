@@ -38,5 +38,8 @@ export async function complaintAction(
 export async function loadMoreReviews(
   offset: number,
 ): Promise<{ reviews: PublicReview[]; total: number }> {
-  return listApprovedReviews({ offset: Number.isFinite(offset) ? offset : 0, limit: 10 });
+  return listApprovedReviews({
+    offset: Number.isInteger(offset) && offset >= 0 ? offset : 0,
+    limit: 10,
+  });
 }
