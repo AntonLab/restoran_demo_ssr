@@ -9,7 +9,8 @@ export default defineConfig({
     environment: "node",
     include: ["src/**/*.test.ts"],
     passWithNoTests: true,
-    // mongodb-memory-server downloads mongod on its first run.
+    globalSetup: ["src/server/test/global-setup.ts"],
+    // mongod starts slowly under parallel workers on a shared CI runner.
     hookTimeout: 120_000,
   },
 });
