@@ -59,7 +59,7 @@ export async function registerUser(
     const user = await User.create({ ...profile, passwordHash, role: "user" });
     return { ok: true, userId: String(user._id) };
   } catch (error) {
-    // The unique index on User.email also decides the same-instant race.
+    // Unique index on User.email decides the same-instant race.
     if ((error as { code?: number }).code === 11000) {
       return fieldFailure({ email: ["Email already registered"] });
     }

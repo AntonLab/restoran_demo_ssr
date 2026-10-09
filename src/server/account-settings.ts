@@ -54,7 +54,7 @@ export async function changeEmail(
     await User.updateOne({ _id: userId }, { email: checked.data.email });
     return { ok: true };
   } catch (error) {
-    // The unique index decides, including the same-instant race.
+    // Same race as in accounts.ts.
     if ((error as { code?: number }).code === 11000) {
       return fieldFailure({ email: ["Email already registered"] });
     }

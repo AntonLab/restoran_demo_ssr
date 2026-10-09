@@ -13,7 +13,7 @@ export type AccountFormState =
 
 type Outcome = { ok: true } | AccountFailure;
 
-// `failed` in the auth actions file is private: a "use server" module exports only actions.
+// Not shared with (auth)/actions.ts: a "use server" module exports only actions.
 function toState(result: Outcome, message: string, revalidate: boolean): AccountFormState {
   if (!result.ok) return { status: "error", error: result.error, fieldErrors: result.fieldErrors };
   if (revalidate) revalidatePath("/account");

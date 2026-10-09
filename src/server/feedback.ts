@@ -20,7 +20,6 @@ function isHoneypotFilled(input: unknown): boolean {
   return typeof value === "string" ? value !== "" : Boolean(value);
 }
 
-// Validate before limiter.hit: invalid input must not spend a hit.
 function guard<T extends z.ZodType>(
   schema: T,
   input: unknown,

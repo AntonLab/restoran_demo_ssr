@@ -13,7 +13,7 @@ type Props = {
   maxLength?: number;
 };
 
-// Controlled: React 19 resets the form after the action, which would wipe inputs on any error.
+// Controlled: see feedback/field.tsx.
 export function AuthField({
   id,
   name,
