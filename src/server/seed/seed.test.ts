@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import bcrypt from "bcrypt";
 import sharp from "sharp";
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { Category } from "@/server/models/category";
 import { Dish } from "@/server/models/dish";
 import { Review } from "@/server/models/review";
@@ -64,6 +64,13 @@ describe("runSeed", () => {
     await runSeed(opts());
     expect((await Dish.findOne({ name: SEED_DISHES[0].name }).lean())?.priceCents).toBe(1);
     expect((await Settings.findOne().lean())?.name).toBe("Renamed");
+  });
+  test("removes the written images and rethrows when creating a Dish fails", async () => {
+    const failure = new Error("insert failed");
+    const create = vi.spyOn(Dish, "create").mockRejectedValueOnce(failure as never);
+    await expect(runSeed(opts())).rejects.toBe(failure);
+    create.mockRestore();
+    expect(await readdir(uploadsDir)).toHaveLength(0);
   });
   test.each([{ adminEmail: undefined }, { adminPassword: "" }])(
     "fails before writing without admin env %j",

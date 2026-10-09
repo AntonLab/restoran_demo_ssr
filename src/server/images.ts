@@ -14,7 +14,11 @@ export class InvalidImageError extends Error {
 }
 
 const SIZES = { small: 400, medium: 900 } as const;
-const ALLOWED_FORMATS = ["jpeg", "png", "webp"];
+const ALLOWED_FORMATS = ["jpeg", "png", "webp"] as const;
+type AllowedFormat = (typeof ALLOWED_FORMATS)[number];
+const isAllowedFormat = (format: string): format is AllowedFormat =>
+  (ALLOWED_FORMATS as readonly string[]).includes(format);
+const SYSTEM_ERRNO = new Set(["ENOSPC", "EACCES", "EMFILE", "ENOENT"]);
 // The strict name shape is the path-traversal guard for readUpload.
 const STORED_NAME = /^[0-9a-f-]{36}-(400|900)\.webp$/;
 
@@ -29,7 +33,7 @@ export async function processImage(
   if (input.length === 0 || input.length > MAX_IMAGE_BYTES) throw new InvalidImageError();
   try {
     const { format } = await sharp(input).metadata();
-    if (!format || !ALLOWED_FORMATS.includes(format)) throw new InvalidImageError();
+    if (!format || !isAllowedFormat(format)) throw new InvalidImageError();
   } catch (error) {
     throw asInvalidImage(error);
   }
@@ -51,10 +55,17 @@ export async function processImage(
   return names;
 }
 
-// sharp throws a plain Error on undecodable bytes; Node system errors (ENOSPC, EACCES) have a string `code` and keep their cause.
+// sharp can throw coded input errors, so a `code` alone does not mark a system error: Node ones also carry a string `syscall` or a known errno code.
+function isSystemError(error: unknown): boolean {
+  if (!(error instanceof Error) || !("code" in error) || typeof error.code !== "string") {
+    return false;
+  }
+  return ("syscall" in error && typeof error.syscall === "string") || SYSTEM_ERRNO.has(error.code);
+}
+
 function asInvalidImage(error: unknown): unknown {
-  if (error instanceof Error && "code" in error && typeof error.code === "string") return error;
-  return error instanceof InvalidImageError ? error : new InvalidImageError();
+  if (error instanceof InvalidImageError || isSystemError(error)) return error;
+  return new InvalidImageError();
 }
 
 export async function readUpload(

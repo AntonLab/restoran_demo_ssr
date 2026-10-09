@@ -1,4 +1,4 @@
-import { access, readFile } from "node:fs/promises";
+import { access, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import bcrypt from "bcrypt";
 import type { Types } from "mongoose";
@@ -71,20 +71,28 @@ export async function runSeed(opts: SeedOptions): Promise<{
       await readFile(path.join(opts.imagesDir, seed.image)),
       uploadsDir,
     );
-    await Dish.create({
-      name: seed.name,
-      shortDescription: seed.shortDescription,
-      fullDescription: seed.fullDescription,
-      weight: seed.weight,
-      ingredients: seed.ingredients,
-      priceCents: seed.priceCents,
-      categoryId: categoryIds.get(seed.category),
-      isChefChoice: seed.isChefChoice ?? false,
-      inStock: seed.inStock ?? true,
-      favoritesCount: seed.favoritesCount,
-      order: position,
-      image,
-    });
+    try {
+      await Dish.create({
+        name: seed.name,
+        shortDescription: seed.shortDescription,
+        fullDescription: seed.fullDescription,
+        weight: seed.weight,
+        ingredients: seed.ingredients,
+        priceCents: seed.priceCents,
+        categoryId: categoryIds.get(seed.category),
+        isChefChoice: seed.isChefChoice ?? false,
+        inStock: seed.inStock ?? true,
+        favoritesCount: seed.favoritesCount,
+        order: position,
+        image,
+      });
+    } catch (error) {
+      // processImage already wrote the files; a failed insert would orphan them.
+      await Promise.all(
+        Object.values(image).map((name) => rm(path.join(uploadsDir, name), { force: true })),
+      );
+      throw error;
+    }
     log(`Dish created: ${seed.name}`);
   }
 

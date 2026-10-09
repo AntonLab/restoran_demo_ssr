@@ -1,8 +1,8 @@
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import sharp from "sharp";
-import { beforeAll, describe, expect, test } from "vitest";
+import { afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 import { InvalidImageError, MAX_IMAGE_BYTES, processImage, readUpload } from "@/server/images";
 
 let dir: string;
@@ -10,10 +10,21 @@ beforeAll(async () => {
   dir = await mkdtemp(path.join(tmpdir(), "uploads-"));
 });
 
-const make = (width: number, height: number, format: "png" | "jpeg" = "png") =>
-  sharp({ create: { width, height, channels: 3, background: "#336" } })
-    [format]()
-    .toBuffer();
+const make = (width: number, height: number, format: "png" | "jpeg" = "png") => {
+  const image = sharp({ create: { width, height, channels: 3, background: "#336" } });
+  return image[format]().toBuffer();
+};
+
+// Lets the 400 px write succeed, then fails the 900 px write with `error`.
+function failSecondWrite(error: Error) {
+  const realToFile = sharp.prototype.toFile;
+  let calls = 0;
+  return vi.spyOn(sharp.prototype, "toFile").mockImplementation(function (this: unknown, ...args) {
+    calls += 1;
+    if (calls === 2) return Promise.reject(error);
+    return realToFile.apply(this, args);
+  });
+}
 
 describe("processImage", () => {
   test("writes 400 px and 900 px WebP files", async () => {
@@ -41,6 +52,24 @@ describe("processImage", () => {
     );
     expect(error).not.toBeInstanceOf(InvalidImageError);
     expect(error).toMatchObject({ code: expect.any(String) });
+  });
+  describe("when the 900 px write fails", () => {
+    afterEach(() => vi.restoreAllMocks());
+    test("removes the 400 px file and rethrows a system error", async () => {
+      const local = await mkdtemp(path.join(tmpdir(), "uploads-"));
+      const enospc = Object.assign(new Error("no space"), { code: "ENOSPC" });
+      failSecondWrite(enospc);
+      await expect(processImage(await make(2000, 1200), local)).rejects.toBe(enospc);
+      expect(await readdir(local)).toEqual([]);
+    });
+    test("wraps a coded sharp error as InvalidImageError", async () => {
+      const local = await mkdtemp(path.join(tmpdir(), "uploads-"));
+      failSecondWrite(Object.assign(new Error("bad input"), { code: "VIPS_FAIL" }));
+      await expect(processImage(await make(2000, 1200), local)).rejects.toBeInstanceOf(
+        InvalidImageError,
+      );
+      expect(await readdir(local)).toEqual([]);
+    });
   });
   test.each([
     ["text", Buffer.from("not an image")],
