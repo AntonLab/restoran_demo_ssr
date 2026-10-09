@@ -13,6 +13,9 @@ next-env.d.ts
 .env*
 !.env.example
 
+# Runtime data: image uploads, served by a route handler
+/uploads/
+
 # Logs and OS files
 npm-debug.log*
 .DS_Store
