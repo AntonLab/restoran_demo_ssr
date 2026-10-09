@@ -27,6 +27,21 @@ describe("processImage", () => {
     const { medium } = await processImage(await make(300, 200, "jpeg"), dir);
     expect((await sharp(path.join(dir, medium)).metadata()).width).toBe(300);
   });
+  test("rejects a real GIF", async () => {
+    const gif = await sharp({ create: { width: 10, height: 10, channels: 3, background: "#336" } })
+      .gif()
+      .toBuffer();
+    await expect(processImage(gif, dir)).rejects.toBeInstanceOf(InvalidImageError);
+  });
+  test("lets filesystem errors through", async () => {
+    const blocker = path.join(dir, "blocker");
+    await writeFile(blocker, "x");
+    const error = await processImage(await make(50, 50), path.join(blocker, "sub")).catch(
+      (e: unknown) => e,
+    );
+    expect(error).not.toBeInstanceOf(InvalidImageError);
+    expect(error).toMatchObject({ code: expect.any(String) });
+  });
   test.each([
     ["text", Buffer.from("not an image")],
     ["empty", Buffer.alloc(0)],
@@ -41,10 +56,10 @@ describe("readUpload", () => {
     const { small } = await processImage(await make(500, 500), dir);
     expect((await readUpload(small, dir))?.length).toBeGreaterThan(0);
   });
+  beforeAll(() => writeFile(path.join(dir, "secret.txt"), "s"));
   test.each(["../secret.txt", "..\\x-400.webp", "a.webp", "", "x/y-400.webp"])(
     "returns null for unsafe name %j",
     async (name) => {
-      await writeFile(path.join(dir, "secret.txt"), "s");
       expect(await readUpload(name, dir)).toBeNull();
     },
   );

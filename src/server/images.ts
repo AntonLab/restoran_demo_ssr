@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile } from "node:fs/promises";
+import { mkdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 import { getEnv } from "@/server/env";
@@ -30,9 +30,13 @@ export async function processImage(
   try {
     const { format } = await sharp(input).metadata();
     if (!format || !ALLOWED_FORMATS.includes(format)) throw new InvalidImageError();
-    await mkdir(dir, { recursive: true });
-    const id = randomUUID();
-    const names = { small: `${id}-400.webp`, medium: `${id}-900.webp` };
+  } catch (error) {
+    throw asInvalidImage(error);
+  }
+  await mkdir(dir, { recursive: true });
+  const id = randomUUID();
+  const names = { small: `${id}-400.webp`, medium: `${id}-900.webp` };
+  try {
     for (const key of ["small", "medium"] as const) {
       await sharp(input)
         .rotate()
@@ -40,12 +44,18 @@ export async function processImage(
         .webp({ quality: 80 })
         .toFile(path.join(dir, names[key]));
     }
-    return names;
   } catch (error) {
-    if (error instanceof InvalidImageError) throw error;
-    // sharp throws a plain Error on bytes it cannot decode
-    throw new InvalidImageError();
+    await rm(path.join(dir, names.small), { force: true });
+    throw asInvalidImage(error);
   }
+  return names;
+}
+
+// sharp throws a plain Error on bytes it cannot decode; a Node system error
+// (ENOSPC, EACCES, ...) has a string `code` and must keep its real cause.
+function asInvalidImage(error: unknown): unknown {
+  if (error instanceof Error && "code" in error && typeof error.code === "string") return error;
+  return error instanceof InvalidImageError ? error : new InvalidImageError();
 }
 
 export async function readUpload(
