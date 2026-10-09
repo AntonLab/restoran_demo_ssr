@@ -1,6 +1,9 @@
 import { formatHours } from "@/lib/hours";
 import type { SettingsData } from "@/server/queries/settings";
 
+const linkClass =
+  "hover:text-primary rounded-sm underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50";
+
 export function Footer({ settings }: { settings: SettingsData }) {
   const { name, address, contacts, schedule, socials } = settings;
   return (
@@ -12,17 +15,14 @@ export function Footer({ settings }: { settings: SettingsData }) {
           <ul className="mt-2 space-y-1">
             {contacts.phone && (
               <li>
-                <a
-                  href={`tel:${contacts.phone.replace(/[^\d+]/g, "")}`}
-                  className="hover:text-primary"
-                >
+                <a href={`tel:${contacts.phone.replace(/[^\d+]/g, "")}`} className={linkClass}>
                   {contacts.phone}
                 </a>
               </li>
             )}
             {contacts.email && (
               <li>
-                <a href={`mailto:${contacts.email}`} className="hover:text-primary">
+                <a href={`mailto:${contacts.email}`} className={linkClass}>
                   {contacts.email}
                 </a>
               </li>
@@ -51,12 +51,7 @@ export function Footer({ settings }: { settings: SettingsData }) {
             <ul className="space-y-1">
               {socials.map(({ label, url }) => (
                 <li key={url}>
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-primary"
-                  >
+                  <a href={url} target="_blank" rel="noopener noreferrer" className={linkClass}>
                     {label}
                   </a>
                 </li>

@@ -19,6 +19,15 @@ describe("getTodayHours", () => {
   test("falls back to UTC for an invalid timezone", () => {
     expect(getTodayHours(schedule, "Not/AZone", now)?.day).toBe("Fri");
   });
+  test("returns a closed mid-week day", () => {
+    const midweek = schedule.map((d) => (d.day === "Wed" ? { ...d, closed: true } : d));
+    const wed = new Date("2026-10-07T12:00:00Z");
+    expect(formatHours(getTodayHours(midweek, "UTC", wed))).toBe("Closed");
+  });
+  test("absent day gives undefined", () => {
+    const noFri = schedule.filter((d) => d.day !== "Fri");
+    expect(getTodayHours(noFri, "UTC", now)).toBeUndefined();
+  });
   test("empty schedule gives undefined", () => {
     expect(getTodayHours([], "UTC", now)).toBeUndefined();
   });

@@ -112,7 +112,12 @@ describe("getDishDetail", () => {
     expect(d).toMatchObject({ name: "Borscht", fullDescription: "f", weight: "300 g" });
     expect(d?.ingredients).toEqual([]);
   });
-  test.each(["abc", "", "123", "zzzzzzzzzzzzzzzzzzzzzzzz"])(
+  test("uppercase 24-hex id resolves", async () => {
+    const { dishes } = await seed();
+    const d = await getDishDetail(String(dishes[0]._id).toUpperCase());
+    expect(d?.name).toBe("Borscht");
+  });
+  test.each(["abc", "", "123", "zzzzzzzzzzzzzzzzzzzzzzzz", "abcdefghijkl"])(
     "malformed id %j gives null",
     async (id) => {
       await expect(getDishDetail(id)).resolves.toBeNull();

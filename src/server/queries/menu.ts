@@ -67,16 +67,19 @@ export async function getMenuSections(filters: MenuFilters): Promise<MenuSection
     ...(filters.minCents !== null && { $gte: filters.minCents }),
     ...(filters.maxCents !== null && { $lte: filters.maxCents }),
   };
-  const dishes = await Dish.find({
-    status: "active",
-    deletedAt: null,
-    categoryId: { $in: categories.map((c) => c._id) },
-    ...(filters.q && { name: { $regex: escapeRegExp(filters.q), $options: "i" } }),
-    ...(Object.keys(price).length > 0 && { priceCents: price }),
-    ...(filters.inStock && { inStock: true }),
-  })
-    .sort(SORTS[filters.sort])
-    .lean();
+  // Sort goes in query options: oxlint's no-array-sort mistakes Query#sort for Array#sort.
+  const dishes = await Dish.find(
+    {
+      status: "active",
+      deletedAt: null,
+      categoryId: { $in: categories.map((c) => c._id) },
+      ...(filters.q && { name: { $regex: escapeRegExp(filters.q), $options: "i" } }),
+      ...(Object.keys(price).length > 0 && { priceCents: price }),
+      ...(filters.inStock && { inStock: true }),
+    },
+    null,
+    { sort: SORTS[filters.sort] },
+  ).lean();
 
   const sections: MenuSection[] = [
     {
@@ -107,7 +110,8 @@ export async function getPopularDishes(limit = 8): Promise<DishCardData[]> {
   return dishes.map(toCard);
 }
 
-export async function getDishDetail(id: string): Promise<DishDetail | null> {
+export async function getDishDetail(rawId: string): Promise<DishDetail | null> {
+  const id = rawId.toLowerCase();
   // A 12-character string is a valid ObjectId input, so require the round trip to match.
   if (!mongoose.isValidObjectId(id) || String(new mongoose.Types.ObjectId(id)) !== id) return null;
   await connectDb();
