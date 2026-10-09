@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/site/header";
+import { HeaderAuth } from "@/components/site/header-auth";
 import { Footer } from "@/components/site/footer";
 import { getSettings } from "@/server/queries/settings";
 
@@ -23,7 +24,7 @@ export default async function RootLayout({ children, modal }: LayoutProps<"/">) 
   return (
     <html lang="en" className={`${montserrat.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <Header siteName={settings.name} />
+        <Header siteName={settings.name} auth={<HeaderAuth />} />
         <main className="flex-1">{children}</main>
         <Footer settings={settings} />
         {modal}
