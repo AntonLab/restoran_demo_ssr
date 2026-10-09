@@ -36,22 +36,30 @@ _Avoid_: Cabinet, profile, dashboard
 ### Menu
 
 **Menu**:
-The public list of Dishes, grouped by Category tabs, with filters (name,
-Category, price range, In stock) and sorting (price, Popular first).
+The public list of Dishes on one page, one section per Category, with filters
+(name, price range, In stock) that apply to every section and sorting (price,
+Popular first) inside each section. A section left empty by the filters is
+hidden.
 
 **Category**:
-A Menu tab such as Breakfasts or Desserts. Active or inactive; an inactive
+A Menu section such as Breakfasts or Desserts. Active or inactive; an inactive
 Category hides its Dishes. A Category that still has Dishes cannot be deleted.
-"Chef's choice" is a tab, not a Category: it lists Dishes marked Chef's choice.
+"Chef's choice" is the first section, not a Category: it lists Dishes marked
+Chef's choice, which also appear in their own Category.
 
 **Dish**:
-One item on the Menu, with a price in cents, two image sizes, ingredients and
-a Category. Active or inactive, In stock or not, and soft-deleted instead of
+One item on the Menu, with a price in cents, two image sizes, ingredients, a
+Weight and a Category. Active or inactive, In stock or not, and soft-deleted instead of
 removed.
 _Avoid_: Product, item (except as Cart item or Order item)
 
+**Weight**:
+The serving size shown on a Dish as free text, such as "300 g" or
+"150/200/150 g" for a Dish of several parts. Never used in calculations.
+_Avoid_: Portion, size
+
 **Chef's choice**:
-A flag on a Dish (`isChefChoice`) that puts it on the Chef's choice tab.
+A flag on a Dish (`isChefChoice`) that puts it in the Chef's choice section.
 
 **In stock**:
 Whether a Dish can be ordered now (`inStock`). Separate from active: an active
@@ -114,9 +122,18 @@ Dishes chosen with a Booking, with Price snapshots.
 
 ### Feedback
 
+**Feedback page**:
+The public page where a Guest or User leaves a Review or a Complaint and reads
+approved Reviews. A page, not a record.
+
 **Review**:
-Stars 1 to 5, text and a contact. Public only after an Admin approves it.
-_Avoid_: Comment, rating, feedback
+Two ratings of 1 to 5 stars, one for Dishes and one for Service, with
+required text and an optional contact. Public only after an Admin approves it.
+_Avoid_: Comment, feedback
+
+**Rating**:
+One star score of 1 to 5 inside a Review: the Dishes rating or the Service
+rating. Not a record of its own.
 
 **Complaint**:
 A reason and a contact, sent to the admin area and never shown publicly. Not a
@@ -151,7 +168,7 @@ The `log` mail delivery: each email is printed to the server log as
 there.
 
 **Seed**:
-`npm run seed`: idempotent; creates the Admin, default Settings, 13 Categories
+`npm run seed`: idempotent; creates the Admin, default Settings, 12 Categories
 and demo Dishes with images and `favoritesCount`.
 
 ## Statuses

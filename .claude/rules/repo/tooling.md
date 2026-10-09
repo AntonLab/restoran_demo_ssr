@@ -14,7 +14,7 @@ paths:
 
 - **Node >= 24** (`.nvmrc`, `engines.node`; `.npmrc` sets `engine-strict`).
   `@types/node` follows the Node major.
-- **Gates**: `npm run typecheck` (`tsc --noEmit`), `npm run lint` (oxlint),
+- **Gates**: `npm run typecheck` (`next typegen && tsc --noEmit`), `npm run lint` (oxlint),
   `npm run format:check` (oxfmt), `npm test` (Vitest), `npm run build`. The
   main session runs them through `gate-runner`, never inline.
 - **Install scripts**: npm 11 runs a package's install script only when
