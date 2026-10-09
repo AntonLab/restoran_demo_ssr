@@ -15,6 +15,8 @@ export function ReviewForm() {
   const [dishes, setDishes] = useState(0);
   const [service, setService] = useState(0);
   const [text, setText] = useState("");
+  // Controlled: React 19 resets the form after the action, which would wipe it on any error.
+  const [contact, setContact] = useState("");
 
   if (state.status === "success") {
     return <output className="block">Thanks, your review will appear after moderation.</output>;
@@ -65,6 +67,8 @@ export function ReviewForm() {
           id="review-contact"
           name="contact"
           maxLength={200}
+          value={contact}
+          onChange={(e) => setContact(e.target.value)}
           aria-invalid={Boolean(errors.contact)}
           className={field}
         />

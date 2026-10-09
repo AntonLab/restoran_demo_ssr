@@ -58,6 +58,15 @@ describe("submitReview", () => {
     expect(sixth).toMatchObject({ ok: false, error: expect.stringMatching(/too many/i) });
     expect((await submitReview(review, "4.4.4.4", limiter)).ok).toBe(true);
   });
+  test.each([
+    [60_000, "Try again in 1 minute."],
+    [150_000, "Try again in 3 minutes."],
+  ])("retry message for a %i ms window is pluralized correctly", async (windowMs, expected) => {
+    const limiter = createRateLimiter({ limit: 1, windowMs, now: () => 0 });
+    await submitReview(review, "5.5.5.5", limiter);
+    const refused = await submitReview(review, "5.5.5.5", limiter);
+    expect(refused).toMatchObject({ ok: false, error: expect.stringContaining(expected) });
+  });
 });
 
 describe("submitComplaint", () => {

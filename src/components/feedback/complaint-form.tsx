@@ -12,6 +12,8 @@ const field =
 export function ComplaintForm() {
   const [state, action, pending] = useActionState(complaintAction, idle);
   const [text, setText] = useState("");
+  // Controlled: React 19 resets the form after the action, which would wipe it on any error.
+  const [contact, setContact] = useState("");
 
   if (state.status === "success") {
     return (
@@ -59,6 +61,8 @@ export function ComplaintForm() {
           name="contact"
           required
           maxLength={200}
+          value={contact}
+          onChange={(e) => setContact(e.target.value)}
           aria-invalid={Boolean(errors.contact)}
           className={field}
         />

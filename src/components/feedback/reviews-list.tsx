@@ -1,32 +1,12 @@
 "use client";
 
-import { Star } from "lucide-react";
 import { useState, useTransition } from "react";
 import { loadMoreReviews } from "@/app/feedback/actions";
+import { RatingRow } from "@/components/feedback/rating-row";
 import { Button } from "@/components/ui/button";
 import type { PublicReview } from "@/server/feedback";
 
 const date = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
-
-export function RatingRow({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex items-center gap-2 text-sm">
-      <span className="w-14 text-muted-foreground">{label}</span>
-      <span className="flex">
-        <span className="sr-only">{value} out of 5</span>
-        {[1, 2, 3, 4, 5].map((n) => (
-          <Star
-            key={n}
-            aria-hidden
-            className={
-              n <= value ? "size-4 fill-primary text-primary" : "size-4 text-muted-foreground"
-            }
-          />
-        ))}
-      </span>
-    </div>
-  );
-}
 
 export function ReviewsList({ initial, total }: { initial: PublicReview[]; total: number }) {
   const [list, setList] = useState(initial);

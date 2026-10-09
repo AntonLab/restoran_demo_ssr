@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { ComplaintForm } from "@/components/feedback/complaint-form";
 import { ReviewForm } from "@/components/feedback/review-form";
-import { RatingRow, ReviewsList } from "@/components/feedback/reviews-list";
+import { RatingRow } from "@/components/feedback/rating-row";
+import { ReviewsList } from "@/components/feedback/reviews-list";
 import { getReviewStats, listApprovedReviews } from "@/server/feedback";
 
 export const metadata: Metadata = { title: "Leave feedback" };
@@ -12,7 +13,7 @@ function Average({ label, value }: { label: string; value: number }) {
     <div className="flex flex-col gap-1">
       <span className="text-sm text-muted-foreground">{label}</span>
       <span className="text-4xl font-bold">{value.toFixed(1)}</span>
-      <RatingRow label="" value={Math.round(value)} />
+      <RatingRow value={Math.round(value)} />
     </div>
   );
 }

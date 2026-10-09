@@ -42,7 +42,10 @@ function guard<T extends z.ZodType>(
   if (!hit.ok) {
     const minutes = Math.max(1, Math.ceil(hit.retryAfterMs / 60_000));
     return {
-      failure: { ok: false, error: `Too many submissions. Try again in ${minutes} minutes.` },
+      failure: {
+        ok: false,
+        error: `Too many submissions. Try again in ${minutes} ${minutes === 1 ? "minute" : "minutes"}.`,
+      },
     };
   }
   return { data: parsed.data };
