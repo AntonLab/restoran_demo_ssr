@@ -4,7 +4,7 @@ import { Dialog } from "@base-ui/react/dialog";
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export function DishModal({ children }: { children: React.ReactNode }) {
+export function DishModal({ label, children }: { label: string; children: React.ReactNode }) {
   const router = useRouter();
   return (
     <Dialog.Root
@@ -17,7 +17,7 @@ export function DishModal({ children }: { children: React.ReactNode }) {
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/60" />
         <Dialog.Popup
-          aria-label="Dish details"
+          aria-label={label}
           className="fixed top-1/2 left-1/2 z-50 max-h-[90dvh] w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border bg-card p-4 text-card-foreground outline-none md:p-6"
         >
           <Dialog.Close

@@ -32,6 +32,7 @@ export function Footer({ settings }: { settings: SettingsData }) {
         <section>
           <h2 className="mb-2 text-lg font-semibold">Opening hours</h2>
           <table className="text-sm">
+            <caption className="sr-only">Opening hours</caption>
             <tbody>
               {schedule.map((day) => (
                 <tr key={day.day}>

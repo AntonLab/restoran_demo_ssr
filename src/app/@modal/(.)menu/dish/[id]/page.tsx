@@ -9,7 +9,7 @@ export default async function Page({ params }: PageProps<"/menu/dish/[id]">) {
   const dish = await getDishDetail((await params).id);
   if (!dish) notFound();
   return (
-    <DishModal>
+    <DishModal label={dish.name}>
       <DishDetailView dish={dish} />
     </DishModal>
   );

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { connectDb } from "@/server/db";
 import { Settings } from "@/server/models/settings";
 import { DEFAULT_SETTINGS } from "@/server/settings-defaults";
@@ -14,7 +15,8 @@ export type SettingsData = {
   maxConcurrentBookings: number;
 };
 
-export async function getSettings(): Promise<SettingsData> {
+// cache() dedupes the read within one request: layout and generateMetadata both call it.
+export const getSettings = cache(async (): Promise<SettingsData> => {
   await connectDb();
   const s = await Settings.findOne().lean();
   if (!s) return DEFAULT_SETTINGS;
@@ -33,4 +35,4 @@ export async function getSettings(): Promise<SettingsData> {
     timezone: s.timezone,
     maxConcurrentBookings: s.maxConcurrentBookings,
   };
-}
+});
