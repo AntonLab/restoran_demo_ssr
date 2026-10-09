@@ -21,7 +21,7 @@ export function PopularCarousel({ dishes }: { dishes: DishCardData[] }) {
         // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex
         tabIndex={0}
         aria-label="Popular dishes"
-        className="snap-x snap-mandatory overflow-x-auto pb-2"
+        className="snap-x snap-mandatory overflow-x-auto pb-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <ul className="flex w-max gap-4">
           {dishes.map((dish) => (

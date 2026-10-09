@@ -20,7 +20,7 @@ export function DishCard({ dish }: { dish: DishCardData }) {
         <h3 className="font-semibold">
           <Link
             href={`/menu/dish/${dish.id}`}
-            className="after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-3 focus-visible:after:ring-ring/50"
+            className="after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-3 focus-visible:after:ring-inset focus-visible:after:ring-ring/50"
           >
             {dish.name}
           </Link>
@@ -32,12 +32,10 @@ export function DishCard({ dish }: { dish: DishCardData }) {
           {!dish.inStock && (
             <span className="rounded-md bg-muted px-2 py-0.5 text-xs">Out of stock</span>
           )}
-          <span
-            className="flex items-center gap-1 text-sm text-muted-foreground"
-            aria-label={`${dish.favoritesCount} favorites`}
-          >
+          <span className="flex items-center gap-1 text-sm text-muted-foreground">
             <Heart aria-hidden className="size-4" />
-            {dish.favoritesCount}
+            <span aria-hidden>{dish.favoritesCount}</span>
+            <span className="sr-only">{dish.favoritesCount} favorites</span>
           </span>
         </div>
         <div className="flex items-center gap-2">
