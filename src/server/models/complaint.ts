@@ -1,6 +1,6 @@
 import mongoose, { Schema, type InferSchemaType, type Model } from "mongoose";
 
-export const COMPLAINT_STATUSES = ["new", "in_progress", "resolved"] as const;
+export const COMPLAINT_STATUSES = ["new", "in_review", "resolved"] as const;
 
 const complaintSchema = new Schema(
   {
