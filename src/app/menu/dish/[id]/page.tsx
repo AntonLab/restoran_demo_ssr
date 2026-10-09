@@ -1,21 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { connection } from "next/server";
+import { loadDish } from "@/app/menu/dish/[id]/load-dish";
 import { DishDetailView } from "@/components/menu/dish-detail-view";
-import { getDishDetail } from "@/server/queries/menu";
 
 export async function generateMetadata({
   params,
 }: PageProps<"/menu/dish/[id]">): Promise<Metadata> {
-  await connection();
-  const dish = await getDishDetail((await params).id);
+  const dish = await loadDish(params);
   return { title: dish ? dish.name : "Dish not found" };
 }
 
 export default async function Page({ params }: PageProps<"/menu/dish/[id]">) {
-  await connection();
-  const dish = await getDishDetail((await params).id);
+  const dish = await loadDish(params);
   if (!dish) notFound();
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-6">

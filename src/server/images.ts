@@ -51,8 +51,7 @@ export async function processImage(
   return names;
 }
 
-// sharp throws a plain Error on bytes it cannot decode; a Node system error
-// (ENOSPC, EACCES, ...) has a string `code` and must keep its real cause.
+// sharp throws a plain Error on undecodable bytes; Node system errors (ENOSPC, EACCES) have a string `code` and keep their cause.
 function asInvalidImage(error: unknown): unknown {
   if (error instanceof Error && "code" in error && typeof error.code === "string") return error;
   return error instanceof InvalidImageError ? error : new InvalidImageError();
