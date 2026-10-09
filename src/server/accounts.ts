@@ -19,6 +19,9 @@ export const fieldFailure = (fieldErrors: FieldErrors): AccountFailure => ({
   fieldErrors,
 });
 
+export const zodFailure = (error: z.ZodError) =>
+  fieldFailure(z.flattenError(error).fieldErrors as FieldErrors);
+
 // Validate before limiter.hit: invalid input must not spend a hit.
 export function guard<T extends z.ZodType>(
   schema: T,
@@ -28,7 +31,7 @@ export function guard<T extends z.ZodType>(
 ): { data: z.output<T> } | { failure: AccountFailure } {
   const parsed = schema.safeParse(input);
   if (!parsed.success) {
-    return { failure: fieldFailure(z.flattenError(parsed.error).fieldErrors as FieldErrors) };
+    return { failure: zodFailure(parsed.error) };
   }
   const hit = limiter.hit(key(parsed.data));
   if (!hit.ok) {

@@ -1,10 +1,9 @@
 import { z } from "zod";
 import { changeEmailSchema, changePasswordSchema, contactsSchema } from "@/lib/auth-schemas";
-import { fieldFailure, guard, type AccountFailure } from "@/server/accounts";
+import { fieldFailure, guard, zodFailure, type AccountFailure } from "@/server/accounts";
 import { hashPassword, verifyPassword } from "@/server/auth/password";
 import { revokeAllSessions } from "@/server/auth/session-store";
 import { connectDb } from "@/server/db";
-import type { FieldErrors } from "@/server/feedback";
 import { User } from "@/server/models/user";
 import { createRateLimiter, type Limiter } from "@/server/rate-limit";
 
@@ -36,7 +35,7 @@ async function checkedUser<T extends z.ZodType<{ currentPassword: string }>>(
 export async function updateContacts(userId: string, input: unknown): Promise<Result> {
   const parsed = contactsSchema.safeParse(input);
   if (!parsed.success) {
-    return fieldFailure(z.flattenError(parsed.error).fieldErrors as FieldErrors);
+    return zodFailure(parsed.error);
   }
   await connectDb();
   // Query updates skip the model's role-dependent phone validator; the schema already guarded it.

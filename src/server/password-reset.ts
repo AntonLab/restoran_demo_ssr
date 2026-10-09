@@ -1,11 +1,9 @@
-import { z } from "zod";
 import { forgotPasswordSchema, resetPasswordSchema } from "@/lib/auth-schemas";
-import { fieldFailure, guard, type AccountFailure } from "@/server/accounts";
+import { guard, zodFailure, type AccountFailure } from "@/server/accounts";
 import { hashPassword } from "@/server/auth/password";
 import { revokeAllSessions } from "@/server/auth/session-store";
 import { hashToken, newToken } from "@/server/auth/tokens";
 import { connectDb } from "@/server/db";
-import type { FieldErrors } from "@/server/feedback";
 import { passwordResetMail } from "@/server/mail/password-reset";
 import type { MailMessage } from "@/server/mail/types";
 import { PasswordResetToken } from "@/server/models/password-reset-token";
@@ -63,7 +61,7 @@ export async function resetPassword(input: unknown): Promise<{ ok: true } | Acco
   // Validate first: a weak password must not consume the link.
   const parsed = resetPasswordSchema.safeParse(input);
   if (!parsed.success) {
-    return fieldFailure(z.flattenError(parsed.error).fieldErrors as FieldErrors);
+    return zodFailure(parsed.error);
   }
   const { token, password } = parsed.data;
   await connectDb();

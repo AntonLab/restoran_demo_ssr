@@ -54,6 +54,7 @@ export function FavoriteButton({
         aria-label="Sign in to add to favorites"
         // Read the URL at click time so the Dish modal and filtered Menu return exactly here.
         onClick={(e) => {
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
           e.preventDefault();
           const here = window.location.pathname + window.location.search;
           router.push(`/login?next=${encodeURIComponent(here)}`);
