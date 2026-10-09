@@ -17,6 +17,9 @@ describe("parseEnv", () => {
   test("rejects an unknown MAIL_DELIVERY", () => {
     expect(() => parseEnv({ MAIL_DELIVERY: "pigeon" })).toThrow();
   });
+  test("rejects MAIL_DELIVERY=smtp (not supported in this version)", () => {
+    expect(() => parseEnv({ MAIL_DELIVERY: "smtp" })).toThrow();
+  });
   test("rejects a malformed ADMIN_EMAIL", () => {
     expect(() => parseEnv({ ADMIN_EMAIL: "nope" })).toThrow();
   });

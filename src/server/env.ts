@@ -8,7 +8,7 @@ const schema = z.object({
   ADMIN_EMAIL: optional(z.email().optional()),
   ADMIN_PASSWORD: optional(z.string().optional()),
   APP_BASE_URL: optional(z.string().default("http://localhost:3000")),
-  MAIL_DELIVERY: optional(z.enum(["log", "smtp"]).default("log")),
+  MAIL_DELIVERY: optional(z.enum(["log"]).default("log")),
   UPLOADS_DIR: optional(z.string().optional()),
 });
 

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UtensilsCrossed } from "lucide-react";
@@ -7,7 +8,7 @@ import { NAV_ITEMS } from "@/config/nav";
 import { isNavActive } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
-export function Header({ siteName }: { siteName: string }) {
+export function Header({ siteName, auth }: { siteName: string; auth: ReactNode }) {
   const pathname = usePathname();
   return (
     <header className="bg-background/95 border-border sticky top-0 z-40 border-b backdrop-blur">
@@ -41,6 +42,7 @@ export function Header({ siteName }: { siteName: string }) {
             })}
           </ul>
         </nav>
+        <div className="flex shrink-0 items-center gap-3 text-sm">{auth}</div>
       </div>
     </header>
   );

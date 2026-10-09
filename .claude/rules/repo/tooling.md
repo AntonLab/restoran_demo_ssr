@@ -35,5 +35,6 @@ paths:
   `plan-check.mjs` tells a test block by a `test`/`it`/`describe`/`expect`
   call (Vitest names match) and caps a task at 180 lines. `worktree.mjs`
   creates `.claude/worktrees/<name>` from fresh `origin/dev`, copies
-  `.env.local` and installs; `--remove` deletes it once `origin/dev` holds the
+  `.env.local` (pointing `UPLOADS_DIR` at the main checkout's `uploads/`) and
+  installs with the `.nvmrc` Node major found under nvm; `--remove` deletes it once `origin/dev` holds the
   branch.
