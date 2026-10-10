@@ -54,7 +54,8 @@ export default async function Page({ searchParams }: PageProps<"/menu">) {
                 <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {dishes.map((dish, i) => (
                     <li key={dish.id}>
-                      <DishCard dish={dish} viewer={viewer} eager={s === 0 && i === 0} />
+                      {/* Any card of the first row can be the LCP; 3 covers the widest grid. */}
+                      <DishCard dish={dish} viewer={viewer} eager={s === 0 && i < 3} />
                     </li>
                   ))}
                 </ul>
