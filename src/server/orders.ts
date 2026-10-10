@@ -1,6 +1,6 @@
 import { deliveryInstant, isValidDeliveryTime } from "@/lib/delivery-time";
 import { checkoutSchema, ORDERS_PAGE_SIZE, type OrderFilters } from "@/lib/order-schemas";
-import type { OrderStatus } from "@/lib/order-status";
+import { canUserCancel, ORDER_STATUSES, type OrderStatus } from "@/lib/order-status";
 import { type AccountFailure, fieldFailure, guard } from "@/server/accounts";
 import { getCart } from "@/server/cart";
 import { nextNumber } from "@/server/counter";
@@ -140,5 +140,48 @@ export async function listUserOrders(
     total,
     page: filters.page,
     pageCount: Math.max(1, Math.ceil(total / ORDERS_PAGE_SIZE)),
+  };
+}
+
+export type CancelResult = { ok: true } | { ok: false; error: string; status?: OrderStatus };
+
+const NOT_FOUND = { ok: false, error: "Order not found." } as const;
+const cancellable = ORDER_STATUSES.filter(canUserCancel);
+
+export async function cancelUserOrder(
+  userId: string,
+  number: number,
+  now: Date = new Date(),
+): Promise<CancelResult> {
+  await connectDb();
+  const id = parseObjectId(userId);
+  if (!id || !Number.isInteger(number) || number < 1) return NOT_FOUND;
+  // The status in the filter makes the check and the write one atomic step, so two
+  // parallel cancels (or an admin change in between) cannot both succeed.
+  const hit = await Order.findOneAndUpdate(
+    { number, userId: id, status: { $in: cancellable } },
+    {
+      $set: { status: "cancelled" },
+      $push: { history: { status: "cancelled", at: now, by: "user" } },
+    },
+  );
+  if (hit) return { ok: true };
+  const order = await Order.findOne({ number, userId: id }).select("status").lean();
+  if (!order) return NOT_FOUND;
+  return { ok: false, error: "This order can no longer be cancelled", status: order.status };
+}
+
+export async function getOrderConfirmation(
+  number: number,
+  userId: string | null,
+): Promise<{ number: number; totalCents: number; mine: boolean } | null> {
+  await connectDb();
+  if (!Number.isInteger(number)) return null;
+  const order = await Order.findOne({ number }).select("number totalCents userId").lean();
+  if (!order) return null;
+  return {
+    number: order.number,
+    totalCents: order.totalCents,
+    mine: userId !== null && String(order.userId) === userId,
   };
 }
