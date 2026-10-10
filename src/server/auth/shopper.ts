@@ -1,5 +1,6 @@
 import { guestCartKey, userCartKey } from "@/server/cart";
 import type { OrderContext } from "@/server/orders";
+import { formatRetry, type Limiter } from "@/server/rate-limit";
 import type { SessionInfo } from "@/server/auth/session-store";
 
 export const CART_COOKIE = "cid";
@@ -38,6 +39,13 @@ export function resolveShopper(
   }
   const cid = parseCid(rawCid);
   return { role: "guest", userId: null, ownerKey: cid ? guestCartKey(cid) : null };
+}
+
+// Only issuing a new cid counts: each one is a new Guest Cart row, so a client that drops its
+// cookie could otherwise create them without bound. Returns the error text, or null when allowed.
+export function checkNewCartRate(limiter: Limiter, ip: string): string | null {
+  const hit = limiter.hit(ip);
+  return hit.ok ? null : `Too many attempts. Try again in ${formatRetry(hit.retryAfterMs)}.`;
 }
 
 export const toOrderContext = (shopper: Shopper, ip: string): OrderContext => ({

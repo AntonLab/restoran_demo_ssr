@@ -20,7 +20,9 @@ async function run(
 }
 
 export async function addToCartAction(dishId: string): Promise<CartResult> {
-  return run(await ensureShopper(), (key) => addItem(key, dishId));
+  const shopper = await ensureShopper();
+  if (shopper && "error" in shopper) return { ok: false, error: shopper.error };
+  return run(shopper, (key) => addItem(key, dishId));
 }
 
 export async function setQtyAction(dishId: string, qty: number): Promise<CartResult> {

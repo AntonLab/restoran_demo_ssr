@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
+import { createRateLimiter } from "@/server/rate-limit";
 import {
   cartCookieOptions,
+  checkNewCartRate,
   newCid,
   parseCid,
   resolveShopper,
@@ -73,5 +75,14 @@ test("toOrderContext carries role, ids and ip", () => {
     userId: "u1",
     role: "user",
     ip: "1.2.3.4",
+  });
+});
+
+describe("checkNewCartRate", () => {
+  test("refuses the 31st new Guest Cart from one IP, not another IP", () => {
+    const l = createRateLimiter({ limit: 30, windowMs: 3_600_000 });
+    for (let i = 0; i < 30; i++) expect(checkNewCartRate(l, "1.1.1.1")).toBeNull();
+    expect(checkNewCartRate(l, "1.1.1.1")).toBe("Too many attempts. Try again in 60 minutes.");
+    expect(checkNewCartRate(l, "2.2.2.2")).toBeNull();
   });
 });
