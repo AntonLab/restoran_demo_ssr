@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   addItem,
   cartCount,
@@ -218,6 +218,35 @@ describe("mergeGuestCart", () => {
     });
     await mergeGuestCart("abc", userId);
     expect(await Cart.findOne({ ownerKey: userCartKey(userId) })).toMatchObject({ guest: false });
+  });
+});
+
+describe("concurrent edits", () => {
+  test("a stale Cart document is reloaded and the edit still applies", async () => {
+    const [a, b] = [await mkDish(), await mkDish()];
+    await addItem(GUEST, a);
+    await addItem(GUEST, b);
+    const stale = await Cart.findOne({ ownerKey: GUEST });
+    // Removing a line shifts positions, which bumps __v and makes the stale copy unsaveable.
+    await setQty(GUEST, a, 0);
+    const spy = vi.spyOn(Cart, "findOne").mockImplementationOnce((() => stale) as never);
+    try {
+      expect(await setQty(GUEST, b, 7)).toEqual({ ok: true });
+    } finally {
+      spy.mockRestore();
+    }
+    expect(await cartQuantities(GUEST)).toEqual({ [b]: 7 });
+  });
+  test("parallel edits of one Cart all resolve", async () => {
+    const dishes = [await mkDish(), await mkDish(), await mkDish()];
+    for (const d of dishes) await addItem(GUEST, d);
+    const results = await Promise.all([
+      setQty(GUEST, dishes[0], 3),
+      setQty(GUEST, dishes[1], 4),
+      addItem(GUEST, dishes[2]),
+      setQty(GUEST, dishes[2], 6),
+    ]);
+    expect(results.every((r) => r.ok)).toBe(true);
   });
 });
 

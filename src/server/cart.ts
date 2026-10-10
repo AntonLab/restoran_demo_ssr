@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { MAX_LINES, MAX_QTY } from "@/lib/cart-limits";
 import { connectDb } from "@/server/db";
 import { Cart } from "@/server/models/cart";
@@ -48,12 +49,15 @@ async function cartItems(ownerKey: string) {
   return cart?.items ?? [];
 }
 
+const MAX_EDIT_ATTEMPTS = 3;
+
 // Load-modify-save keeps the schema validators (qty, line cap) in force. Two first adds can race
-// on the unique ownerKey; the loser retries once and finds the winner's Cart.
+// on the unique ownerKey, and two edits that shift line positions race on __v (VersionError);
+// the loser reloads the Cart and retries.
 async function editCart(
   ownerKey: string,
   edit: (items: { dishId: unknown; qty: number }[]) => CartResult,
-  attempt = 0,
+  attempt = 1,
 ): Promise<CartResult> {
   const cart =
     (await Cart.findOne({ ownerKey })) ??
@@ -63,9 +67,9 @@ async function editCart(
   try {
     await cart.save();
   } catch (err) {
-    if ((err as { code?: number }).code === 11000 && attempt === 0) {
-      return editCart(ownerKey, edit, 1);
-    }
+    const retryable =
+      (err as { code?: number }).code === 11000 || err instanceof mongoose.Error.VersionError;
+    if (retryable && attempt < MAX_EDIT_ATTEMPTS) return editCart(ownerKey, edit, attempt + 1);
     throw err;
   }
   return result;
