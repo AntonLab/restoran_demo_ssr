@@ -49,7 +49,7 @@ export async function registerUser(
   input: unknown,
   ip: string,
   limiter: Limiter = registerLimiter,
-): Promise<{ ok: true; userId: string } | AccountFailure> {
+): Promise<{ ok: true; userId: string; phone: string } | AccountFailure> {
   const checked = guard(registerSchema, input, limiter, () => ip);
   if ("failure" in checked) return checked.failure;
   const { password, ...profile } = checked.data;
@@ -57,7 +57,7 @@ export async function registerUser(
   await connectDb();
   try {
     const user = await User.create({ ...profile, passwordHash, role: "user" });
-    return { ok: true, userId: String(user._id) };
+    return { ok: true, userId: String(user._id), phone: profile.phone };
   } catch (error) {
     // Unique index on User.email decides the same-instant race.
     if ((error as { code?: number }).code === 11000) {

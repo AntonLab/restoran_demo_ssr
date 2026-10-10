@@ -25,6 +25,7 @@ describe("registerUser", () => {
   test("creates a user-role User with a hashed password, lower-case email and normalized phone", async () => {
     const result = await registerUser(form, "1.1.1.1", reg());
     expect(result.ok).toBe(true);
+    expect(result).toMatchObject({ ok: true, phone: "+15551234567" });
     const saved = await User.findOne().lean();
     expect(saved).toMatchObject({
       email: "ann@example.com",

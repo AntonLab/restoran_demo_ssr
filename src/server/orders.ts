@@ -185,3 +185,17 @@ export async function getOrderConfirmation(
     mine: userId !== null && String(order.userId) === userId,
   };
 }
+
+const NORMALIZED_PHONE = /^\+?\d{7,16}$/;
+
+// The userId: null filter keeps other Users' Orders safe; a malformed phone must never match every Guest Order.
+export async function attachGuestOrders(userId: string, phone: string): Promise<number> {
+  await connectDb();
+  const id = parseObjectId(userId);
+  if (!id || !NORMALIZED_PHONE.test(phone)) return 0;
+  const result = await Order.updateMany(
+    { userId: null, "customer.phone": phone },
+    { $set: { userId: id } },
+  );
+  return result.modifiedCount;
+}
