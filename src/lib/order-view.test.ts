@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { formatItems, hasOrderFilters, pageHrefs } from "@/lib/order-view";
+import { cancelFailureText, formatItems, hasOrderFilters, pageHrefs } from "@/lib/order-view";
 
 const none = { from: null, to: null, status: null, dish: "", page: 1 };
 
@@ -38,5 +38,21 @@ describe("pageHrefs", () => {
       prev: "/account/orders?page=3",
       next: null,
     });
+  });
+});
+
+describe("cancelFailureText", () => {
+  test("adds the fresh status when the server sent one", () => {
+    expect(cancelFailureText("This order can no longer be cancelled", "accepted")).toBe(
+      "This order can no longer be cancelled. Current status: Accepted.",
+    );
+  });
+  test("returns the server text unchanged without a status", () => {
+    expect(cancelFailureText("Order not found.")).toBe("Order not found.");
+  });
+  test("does not double a trailing period", () => {
+    expect(cancelFailureText("Order not found.", "cancelled")).toBe(
+      "Order not found. Current status: Cancelled.",
+    );
   });
 });

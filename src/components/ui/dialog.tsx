@@ -1,0 +1,68 @@
+"use client";
+
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
+import { cn } from "cn";
+import type * as React from "react";
+
+function Dialog(props: DialogPrimitive.Root.Props) {
+  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
+}
+
+function DialogContent({ className, children, ...props }: DialogPrimitive.Popup.Props) {
+  return (
+    <DialogPrimitive.Portal>
+      <DialogPrimitive.Backdrop
+        data-slot="dialog-overlay"
+        className="fixed inset-0 z-50 bg-black/60 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0"
+      />
+      <DialogPrimitive.Popup
+        data-slot="dialog-content"
+        className={cn(
+          "fixed top-1/2 left-1/2 z-50 grid max-h-[90dvh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-xl border bg-card p-4 text-card-foreground outline-none",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </DialogPrimitive.Popup>
+    </DialogPrimitive.Portal>
+  );
+}
+
+function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div data-slot="dialog-header" className={cn("flex flex-col gap-1.5", className)} {...props} />
+  );
+}
+
+function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="dialog-footer"
+      className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
+      {...props}
+    />
+  );
+}
+
+function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
+  return (
+    <DialogPrimitive.Title
+      data-slot="dialog-title"
+      className={cn("text-base leading-none font-medium", className)}
+      {...props}
+    />
+  );
+}
+
+function DialogDescription({ className, ...props }: DialogPrimitive.Description.Props) {
+  return (
+    <DialogPrimitive.Description
+      data-slot="dialog-description"
+      className={cn("text-sm text-muted-foreground", className)}
+      {...props}
+    />
+  );
+}
+
+export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle };

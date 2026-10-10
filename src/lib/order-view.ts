@@ -1,4 +1,10 @@
 import { serializeOrderFilters, type OrderFilters } from "@/lib/order-schemas";
+import { ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/order-status";
+
+export function cancelFailureText(error: string, status?: OrderStatus): string {
+  if (!status) return error;
+  return `${error.replace(/\.$/, "")}. Current status: ${ORDER_STATUS_LABELS[status]}.`;
+}
 
 const BASE = "/account/orders";
 
