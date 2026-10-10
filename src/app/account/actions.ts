@@ -1,26 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { SIGN_IN, toState, type AccountFormState } from "@/app/account/form-state";
 import { changeEmail, changePassword, updateContacts } from "@/server/account-settings";
-import type { AccountFailure } from "@/server/accounts";
 import { actionUser } from "@/server/auth/guards";
-import type { FieldErrors } from "@/server/feedback";
 
-export type AccountFormState =
-  | { status: "idle" }
-  | { status: "success"; message: string }
-  | { status: "error"; error: string; fieldErrors?: FieldErrors };
-
-type Outcome = { ok: true } | AccountFailure;
-
-// Not shared with (auth)/actions.ts: a "use server" module exports only actions.
-function toState(result: Outcome, message: string, revalidate: boolean): AccountFormState {
-  if (!result.ok) return { status: "error", error: result.error, fieldErrors: result.fieldErrors };
-  if (revalidate) revalidatePath("/account");
-  return { status: "success", message };
-}
-
-const SIGN_IN: AccountFormState = { status: "error", error: "Sign in as a user to do this." };
+export type { AccountFormState };
 
 export async function contactsAction(
   _prev: AccountFormState,
@@ -29,7 +13,7 @@ export async function contactsAction(
   const session = await actionUser();
   if (!session) return SIGN_IN;
   const result = await updateContacts(session.user.id, Object.fromEntries(formData));
-  return toState(result, "Details saved.", true);
+  return toState(result, "Details saved.", "/account");
 }
 
 export async function emailAction(
@@ -39,7 +23,7 @@ export async function emailAction(
   const session = await actionUser();
   if (!session) return SIGN_IN;
   const result = await changeEmail(session.user.id, Object.fromEntries(formData));
-  return toState(result, "Email changed.", true);
+  return toState(result, "Email changed.", "/account");
 }
 
 export async function passwordAction(
@@ -53,5 +37,5 @@ export async function passwordAction(
     session.sessionId,
     Object.fromEntries(formData),
   );
-  return toState(result, "Password changed.", false);
+  return toState(result, "Password changed.");
 }
