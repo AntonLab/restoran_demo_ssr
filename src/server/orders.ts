@@ -1,3 +1,4 @@
+import { phoneField } from "@/lib/auth-schemas";
 import { deliveryInstant, isValidDeliveryTime } from "@/lib/delivery-time";
 import { checkoutSchema, ORDERS_PAGE_SIZE, type OrderFilters } from "@/lib/order-schemas";
 import { canUserCancel, ORDER_STATUSES, type OrderStatus } from "@/lib/order-status";
@@ -191,15 +192,14 @@ export async function getOrderConfirmation(
   };
 }
 
-const NORMALIZED_PHONE = /^\+?\d{7,16}$/;
-
 // The userId: null filter keeps other Users' Orders safe; a malformed phone must never match every Guest Order.
 export async function attachGuestOrders(userId: string, phone: string): Promise<number> {
   await connectDb();
   const id = parseObjectId(userId);
-  if (!id || !NORMALIZED_PHONE.test(phone)) return 0;
+  const parsed = phoneField.safeParse(phone);
+  if (!id || !parsed.success) return 0;
   const result = await Order.updateMany(
-    { userId: null, "customer.phone": phone },
+    { userId: null, "customer.phone": parsed.data },
     { $set: { userId: id } },
   );
   return result.modifiedCount;

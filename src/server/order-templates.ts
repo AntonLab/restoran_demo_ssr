@@ -72,8 +72,9 @@ export async function recordCheckoutTemplate(
   now = new Date(),
 ): Promise<void> {
   await connectDb();
-  const res = await OrderTemplate.updateOne({ userId, ...contact }, { lastUsedAt: now });
+  const { name, phone, address } = contact;
+  const res = await OrderTemplate.updateOne({ userId, name, phone, address }, { lastUsedAt: now });
   if (res.matchedCount || !save) return;
   if ((await OrderTemplate.countDocuments({ userId })) >= TEMPLATE_LIMIT) return;
-  await OrderTemplate.create({ userId, ...contact, lastUsedAt: now });
+  await OrderTemplate.create({ userId, name, phone, address, lastUsedAt: now });
 }

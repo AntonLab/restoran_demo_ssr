@@ -1,28 +1,15 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import { removeUnavailableAction } from "@/app/cart/actions";
+import { useCartAction } from "@/components/cart/use-cart-action";
 import { Button } from "@/components/ui/button";
 
 export function RemoveUnavailableButton() {
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-
-  const run = () => {
-    setError(null);
-    startTransition(async () => {
-      try {
-        const r = await removeUnavailableAction();
-        if (!r.ok) setError(r.error);
-      } catch {
-        setError("Could not update your cart. Try again.");
-      }
-    });
-  };
+  const { pending, error, run } = useCartAction();
 
   return (
     <>
-      <Button variant="outline" disabled={isPending} onClick={run}>
+      <Button variant="outline" disabled={pending} onClick={() => run(removeUnavailableAction)}>
         Remove unavailable
       </Button>
       {error && (

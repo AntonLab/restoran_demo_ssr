@@ -30,16 +30,22 @@ export type CartResult = { ok: true } | { ok: false; error: string };
 const fail = (error: string): CartResult => ({ ok: false, error });
 const NOT_FOUND = fail("Dish not found.");
 
-async function isVisibleDish(id: string) {
-  return Boolean(
-    await Dish.exists({
-      _id: id,
-      status: "active",
-      deletedAt: null,
-      inStock: true,
-      categoryId: { $in: await activeCategoryIds() },
-    }),
-  );
+// One Dish query: a missing or soft-deleted Dish is NOT_FOUND, a hidden one is unavailable.
+async function checkDishOrderable(id: string): Promise<CartResult> {
+  const dish = await Dish.findOne({ _id: id, deletedAt: null })
+    .select("status inStock categoryId")
+    .lean();
+  if (!dish) return NOT_FOUND;
+  const visible =
+    dish.status === "active" &&
+    dish.inStock &&
+    (await activeCategoryIds()).some((c) => String(c) === String(dish.categoryId));
+  return visible ? { ok: true } : fail("Dish is unavailable.");
+}
+
+async function cartItems(ownerKey: string) {
+  const cart = await Cart.findOne({ ownerKey }).select("items").lean();
+  return cart?.items ?? [];
 }
 
 // Load-modify-save keeps the schema validators (qty, line cap) in force. Two first adds can race
@@ -71,9 +77,8 @@ export async function addItem(ownerKey: string, rawDishId: string): Promise<Cart
   await connectDb();
   const dishId = parseObjectId(rawDishId);
   if (!dishId) return NOT_FOUND;
-  const exists = await Dish.exists({ _id: dishId, deletedAt: null });
-  if (!exists) return NOT_FOUND;
-  if (!(await isVisibleDish(dishId))) return fail("Dish is unavailable.");
+  const orderable = await checkDishOrderable(dishId);
+  if (!orderable.ok) return orderable;
   return editCart(ownerKey, (items) => {
     const line = items.find((i) => sameDish(i.dishId, dishId));
     if (line) {
@@ -117,14 +122,12 @@ export async function removeItem(ownerKey: string, rawDishId: string): Promise<C
 
 export async function cartCount(ownerKey: string): Promise<number> {
   await connectDb();
-  const cart = await Cart.findOne({ ownerKey }).select("items").lean();
-  return (cart?.items ?? []).reduce((sum, i) => sum + i.qty, 0);
+  return (await cartItems(ownerKey)).reduce((sum, i) => sum + i.qty, 0);
 }
 
 export async function cartQuantities(ownerKey: string): Promise<Record<string, number>> {
   await connectDb();
-  const cart = await Cart.findOne({ ownerKey }).select("items").lean();
-  return Object.fromEntries((cart?.items ?? []).map((i) => [String(i.dishId), i.qty]));
+  return Object.fromEntries((await cartItems(ownerKey)).map((i) => [String(i.dishId), i.qty]));
 }
 
 export async function getCart(ownerKey: string): Promise<CartView> {

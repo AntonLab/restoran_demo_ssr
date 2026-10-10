@@ -1,29 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import { removeFromCartAction, setQtyAction } from "@/app/cart/actions";
+import { useCartAction } from "@/components/cart/use-cart-action";
 import { Button } from "@/components/ui/button";
 import { MAX_QTY } from "@/lib/cart-limits";
 import type { CartLine } from "@/server/cart";
 
-const GENERIC_ERROR = "Could not update your cart. Try again.";
-
 export function LineControls({ line }: { line: CartLine }) {
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-
   // The Actions revalidate the layout, so the server value replaces the row: no local qty.
-  const run = (action: () => Promise<{ ok: true } | { ok: false; error: string }>) => {
-    setError(null);
-    startTransition(async () => {
-      try {
-        const r = await action();
-        if (!r.ok) setError(r.error);
-      } catch {
-        setError(GENERIC_ERROR);
-      }
-    });
-  };
+  const { pending: isPending, error, run } = useCartAction();
 
   return (
     <div className="flex flex-wrap items-center gap-2">

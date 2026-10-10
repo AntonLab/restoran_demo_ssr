@@ -1,12 +1,11 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
+import { useOptimistic } from "react";
 import { addToCartAction, setQtyAction } from "@/app/cart/actions";
+import { useCartAction } from "@/components/cart/use-cart-action";
 import { Button } from "@/components/ui/button";
 import { MAX_QTY } from "@/lib/cart-limits";
 import type { Viewer } from "@/lib/viewer";
-
-const GENERIC_ERROR = "Could not update your cart. Try again.";
 
 export function AddToCart({
   dishId,
@@ -22,26 +21,12 @@ export function AddToCart({
   // The confirmed value comes from props: the Actions revalidate the layout.
   const qty = viewer.cartQty[dishId] ?? 0;
   const [optimistic, setOptimistic] = useOptimistic(qty, (_: number, next: number) => next);
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const { pending: isPending, error, run: runAction } = useCartAction();
 
   if (viewer.role === "admin") return null;
 
-  const run = (
-    next: number,
-    action: () => Promise<{ ok: true } | { ok: false; error: string }>,
-  ) => {
-    setError(null);
-    startTransition(async () => {
-      setOptimistic(next);
-      try {
-        const r = await action();
-        if (!r.ok) setError(r.error);
-      } catch {
-        setError(GENERIC_ERROR);
-      }
-    });
-  };
+  const run = (next: number, action: Parameters<typeof runAction>[0]) =>
+    runAction(action, () => setOptimistic(next));
 
   return (
     <div className="relative z-10 flex flex-wrap items-center gap-2">
