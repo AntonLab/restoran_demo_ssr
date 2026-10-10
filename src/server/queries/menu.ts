@@ -55,7 +55,7 @@ const SORTS: Record<MenuSort, Record<string, 1 | -1>> = {
   popular: { favoritesCount: -1, order: 1 },
 };
 
-const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+export const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export const activeCategoryIds = async () =>
   (await Category.find({ status: "active" }).select("_id").lean()).map((c) => c._id);

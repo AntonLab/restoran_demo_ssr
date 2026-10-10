@@ -1,5 +1,6 @@
 import { deliveryInstant, isValidDeliveryTime } from "@/lib/delivery-time";
-import { checkoutSchema } from "@/lib/order-schemas";
+import { checkoutSchema, ORDERS_PAGE_SIZE, type OrderFilters } from "@/lib/order-schemas";
+import type { OrderStatus } from "@/lib/order-status";
 import { type AccountFailure, fieldFailure, guard } from "@/server/accounts";
 import { getCart } from "@/server/cart";
 import { nextNumber } from "@/server/counter";
@@ -7,6 +8,7 @@ import { connectDb } from "@/server/db";
 import { Cart } from "@/server/models/cart";
 import { Order } from "@/server/models/order";
 import { recordCheckoutTemplate } from "@/server/order-templates";
+import { escapeRegExp, parseObjectId } from "@/server/queries/menu";
 import { getSettings } from "@/server/queries/settings";
 import { createRateLimiter, type Limiter } from "@/server/rate-limit";
 
@@ -80,4 +82,63 @@ export async function placeOrder(
     );
   }
   return { ok: true, number, totalCents: cart.totalCents };
+}
+
+export type OrderRow = {
+  id: string;
+  number: number;
+  createdAt: Date;
+  deliveryAt: Date;
+  items: { name: string; qty: number }[];
+  totalCents: number;
+  status: OrderStatus;
+};
+
+export type OrderPage = { orders: OrderRow[]; total: number; page: number; pageCount: number };
+
+const nextDay = (date: string) =>
+  new Date(Date.parse(`${date}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+
+export async function listUserOrders(
+  userId: string,
+  filters: OrderFilters,
+  timezone: string,
+): Promise<OrderPage> {
+  await connectDb();
+  const id = parseObjectId(userId);
+  if (!id) return { orders: [], total: 0, page: 1, pageCount: 1 };
+  const createdAt = {
+    ...(filters.from && { $gte: deliveryInstant(filters.from, "00:00", timezone) }),
+    ...(filters.to && { $lt: deliveryInstant(nextDay(filters.to), "00:00", timezone) }),
+  };
+  const query = {
+    userId: id,
+    ...(filters.status && { status: filters.status }),
+    ...(filters.dish && {
+      "items.nameSnapshot": { $regex: escapeRegExp(filters.dish), $options: "i" },
+    }),
+    ...(Object.keys(createdAt).length > 0 && { createdAt }),
+  };
+  const [rows, total] = await Promise.all([
+    Order.find(query)
+      .sort({ createdAt: -1, _id: -1 })
+      .skip((filters.page - 1) * ORDERS_PAGE_SIZE)
+      .limit(ORDERS_PAGE_SIZE)
+      .lean(),
+    Order.countDocuments(query),
+  ]);
+  return {
+    orders: rows.map((o) => ({
+      id: String(o._id),
+      number: o.number,
+      createdAt: o.createdAt,
+      deliveryAt: o.deliveryAt,
+      items: o.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),
+      totalCents: o.totalCents,
+      status: o.status,
+    })),
+    total,
+    page: filters.page,
+    pageCount: Math.max(1, Math.ceil(total / ORDERS_PAGE_SIZE)),
+  };
 }
