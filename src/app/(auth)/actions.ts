@@ -7,6 +7,7 @@ import { clientIp } from "@/lib/client-ip";
 import { authenticate, registerUser, type AccountFailure } from "@/server/accounts";
 import { postLoginPath } from "@/server/auth/next-path";
 import { createSession, revokeSession } from "@/server/auth/session";
+import { afterRegister, afterSignIn } from "@/server/auth/sign-in-hooks";
 import { SESSION_COOKIE } from "@/server/auth/session-store";
 import { getEnv } from "@/server/env";
 import type { FieldErrors } from "@/server/feedback";
@@ -31,6 +32,7 @@ export async function registerAction(
   const result = await registerUser(Object.fromEntries(formData), clientIp(await headers()));
   if (!result.ok) return failed(result);
   await createSession(result.userId);
+  await afterRegister(result.userId, result.phone);
   redirect(postLoginPath(formData.get("next"), "user"));
 }
 
@@ -41,6 +43,7 @@ export async function loginAction(
   const result = await authenticate(Object.fromEntries(formData), clientIp(await headers()));
   if (!result.ok) return failed(result);
   await createSession(result.userId);
+  await afterSignIn(result.userId, result.role);
   redirect(postLoginPath(formData.get("next"), result.role));
 }
 

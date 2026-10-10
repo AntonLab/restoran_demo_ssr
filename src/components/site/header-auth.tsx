@@ -1,24 +1,27 @@
 import Link from "next/link";
 import { logoutAction } from "@/app/(auth)/actions";
+import { CartLink } from "@/components/site/cart-link";
+import { navLinkClass } from "@/components/site/nav-link-class";
 import { Button } from "@/components/ui/button";
 import { getSession } from "@/server/auth/session";
-
-const linkClass =
-  "hover:text-primary text-foreground rounded-sm py-1 transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export async function HeaderAuth() {
   const session = await getSession();
   if (!session) {
     return (
-      <Link href="/login" className={linkClass}>
-        Sign in
-      </Link>
+      <>
+        <CartLink />
+        <Link href="/login" className={navLinkClass}>
+          Sign in
+        </Link>
+      </>
     );
   }
   const admin = session.user.role === "admin";
   return (
     <>
-      <Link href={admin ? "/admin" : "/account"} className={linkClass}>
+      <CartLink />
+      <Link href={admin ? "/admin" : "/account"} className={navLinkClass}>
         {admin ? "Admin" : "Account"}
       </Link>
       <form action={logoutAction}>
