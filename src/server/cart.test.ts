@@ -3,6 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest"
 import {
   addItem,
   cartCount,
+  cartQuantities,
   getCart,
   guestCartKey,
   mergeGuestCart,
@@ -217,5 +218,19 @@ describe("mergeGuestCart", () => {
     });
     await mergeGuestCart("abc", userId);
     expect(await Cart.findOne({ ownerKey: userCartKey(userId) })).toMatchObject({ guest: false });
+  });
+});
+
+describe("cartQuantities", () => {
+  test("maps Dish id to qty, unavailable lines included", async () => {
+    const [a, b] = [await mkDish(), await mkDish()];
+    await addItem(GUEST, a);
+    await addItem(GUEST, a);
+    await addItem(GUEST, b);
+    await Dish.updateOne({ _id: b }, { inStock: false });
+    expect(await cartQuantities(GUEST)).toEqual({ [a]: 2, [b]: 1 });
+  });
+  test("a missing Cart is an empty map", async () => {
+    expect(await cartQuantities(GUEST)).toEqual({});
   });
 });

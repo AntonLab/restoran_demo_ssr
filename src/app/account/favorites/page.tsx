@@ -4,17 +4,14 @@ import { AccountNav } from "@/components/account/account-nav";
 import { DishCard } from "@/components/menu/dish-card";
 import { buttonVariants } from "@/components/ui/button";
 import { requireUser } from "@/server/auth/guards";
-import { buildViewer } from "@/server/auth/viewer";
+import { getViewer } from "@/server/auth/get-viewer";
 import { listFavoriteDishes } from "@/server/favorites";
 
 export const metadata: Metadata = { title: "Favorites" };
 
 export default async function Page() {
   const session = await requireUser("/account/favorites");
-  const [dishes, viewer] = await Promise.all([
-    listFavoriteDishes(session.user.id),
-    buildViewer(session),
-  ]);
+  const [dishes, viewer] = await Promise.all([listFavoriteDishes(session.user.id), getViewer()]);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-10">

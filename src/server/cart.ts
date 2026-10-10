@@ -121,6 +121,12 @@ export async function cartCount(ownerKey: string): Promise<number> {
   return (cart?.items ?? []).reduce((sum, i) => sum + i.qty, 0);
 }
 
+export async function cartQuantities(ownerKey: string): Promise<Record<string, number>> {
+  await connectDb();
+  const cart = await Cart.findOne({ ownerKey }).select("items").lean();
+  return Object.fromEntries((cart?.items ?? []).map((i) => [String(i.dishId), i.qty]));
+}
+
 export async function getCart(ownerKey: string): Promise<CartView> {
   await connectDb();
   const cart = await Cart.findOne({ ownerKey }).lean();
