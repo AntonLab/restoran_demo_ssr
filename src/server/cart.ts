@@ -1,11 +1,11 @@
+import { MAX_LINES, MAX_QTY } from "@/lib/cart-limits";
 import { connectDb } from "@/server/db";
 import { Cart } from "@/server/models/cart";
 import { Category } from "@/server/models/category";
 import { Dish } from "@/server/models/dish";
 import { activeCategoryIds, parseObjectId } from "@/server/queries/menu";
 
-export const MAX_QTY = 20;
-export const MAX_LINES = 30;
+export { MAX_LINES, MAX_QTY };
 
 export const userCartKey = (userId: string) => `user:${userId}`;
 export const guestCartKey = (cid: string) => `guest:${cid}`;
