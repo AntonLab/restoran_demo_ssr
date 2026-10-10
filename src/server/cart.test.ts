@@ -5,6 +5,7 @@ import {
   cartCount,
   getCart,
   guestCartKey,
+  mergeGuestCart,
   removeItem,
   removeUnavailable,
   setQty,
@@ -157,4 +158,64 @@ test("removeItem, removeUnavailable and cartCount", async () => {
   expect((await getCart(GUEST)).lines.map((l) => l.dishId)).toEqual([a]);
   expect(await removeItem(GUEST, a)).toEqual({ ok: true });
   expect((await getCart(GUEST)).lines).toEqual([]);
+});
+
+describe("mergeGuestCart", () => {
+  test("adds quantities with a cap of 20, keeps user-only lines, deletes the guest cart", async () => {
+    const [shared, guestOnly, userOnly] = [await mkDish(), await mkDish(), await mkDish()];
+    const userId = uid();
+    const user = userCartKey(userId);
+    await Cart.create({
+      ownerKey: guestCartKey("abc"),
+      guest: true,
+      items: [
+        { dishId: shared, qty: 15 },
+        { dishId: guestOnly, qty: 2 },
+      ],
+    });
+    await Cart.create({
+      ownerKey: user,
+      guest: false,
+      items: [
+        { dishId: shared, qty: 10 },
+        { dishId: userOnly, qty: 1 },
+      ],
+    });
+    await mergeGuestCart("abc", userId);
+    const items = (await Cart.findOne({ ownerKey: user }))!.items.map((i) => [
+      String(i.dishId),
+      i.qty,
+    ]);
+    expect(Object.fromEntries(items)).toEqual({ [shared]: 20, [guestOnly]: 2, [userOnly]: 1 });
+    expect(await Cart.findOne({ ownerKey: guestCartKey("abc") })).toBeNull();
+  });
+  test("drops guest lines beyond 30", async () => {
+    const userId = uid();
+    const userItems = Array.from({ length: 29 }, () => ({
+      dishId: new mongoose.Types.ObjectId(),
+      qty: 1,
+    }));
+    await Cart.create({ ownerKey: userCartKey(userId), guest: false, items: userItems });
+    const extra = Array.from({ length: 3 }, () => ({
+      dishId: new mongoose.Types.ObjectId(),
+      qty: 1,
+    }));
+    await Cart.create({ ownerKey: guestCartKey("abc"), guest: true, items: extra });
+    await mergeGuestCart("abc", userId);
+    const merged = (await Cart.findOne({ ownerKey: userCartKey(userId) }))!.items;
+    expect(merged).toHaveLength(30);
+    expect(String(merged[29].dishId)).toBe(String(extra[0].dishId));
+  });
+  test("creates the user cart when none exists and ignores a missing guest cart", async () => {
+    const userId = uid();
+    await mergeGuestCart("nobody", userId);
+    expect(await Cart.findOne({ ownerKey: userCartKey(userId) })).toBeNull();
+    await Cart.create({
+      ownerKey: guestCartKey("abc"),
+      guest: true,
+      items: [{ dishId: new mongoose.Types.ObjectId(), qty: 3 }],
+    });
+    await mergeGuestCart("abc", userId);
+    expect(await Cart.findOne({ ownerKey: userCartKey(userId) })).toMatchObject({ guest: false });
+  });
 });

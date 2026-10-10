@@ -172,6 +172,21 @@ export async function getCart(ownerKey: string): Promise<CartView> {
   };
 }
 
+export async function mergeGuestCart(cid: string, userId: string): Promise<void> {
+  await connectDb();
+  const guest = await Cart.findOne({ ownerKey: guestCartKey(cid) }).lean();
+  if (!guest) return;
+  await editCart(userCartKey(userId), (items) => {
+    for (const g of guest.items) {
+      const line = items.find((i) => sameDish(i.dishId, String(g.dishId)));
+      if (line) line.qty = Math.min(MAX_QTY, line.qty + g.qty);
+      else if (items.length < MAX_LINES) items.push({ dishId: g.dishId, qty: g.qty });
+    }
+    return { ok: true };
+  });
+  await Cart.deleteOne({ ownerKey: guestCartKey(cid) });
+}
+
 export async function removeUnavailable(ownerKey: string): Promise<CartResult> {
   const { lines } = await getCart(ownerKey);
   const dishIds = lines.filter((l) => l.unavailable).map((l) => l.dishId);
