@@ -29,8 +29,12 @@ A signed-in browser, identified by the `sid` cookie. The database keeps only
 the SHA-256 of its token; it lasts 7 days and every sign-in starts a new one.
 
 **Account area**:
-A User's own pages: Order history, contact details, Order templates and
+A User's own pages: contact details, Order history, Order templates and
 Favorites.
+
+**Order history**:
+A User's own Orders in the Account area, newest first, filtered by the date
+placed, status and Dish name.
 _Avoid_: Cabinet, profile, dashboard
 
 ### Menu
@@ -77,15 +81,25 @@ the top 8 active Dishes In stock.
 ### Ordering
 
 **Cart**:
-The Dishes a Guest or User intends to order, stored in the database. A Guest's
-Cart is keyed by an anonymous httpOnly cookie and merges into the User's Cart
-at sign-in.
+The Dishes a Guest or User intends to order, stored in the database, with a
+quantity of 1 to 20 per Dish and at most 30 Dishes. A Guest's Cart is keyed
+by an anonymous httpOnly cookie, expires after 30 days unused, and merges into
+the User's Cart at sign-in or registration by adding quantities (still capped
+at 20). The Admin has no Cart. Prices in a Cart are live; they are fixed only
+by the Price snapshot when the Order is placed.
 _Avoid_: Basket
+
+**Unavailable item**:
+A Cart line whose Dish is inactive, out of stock or in an inactive Category.
+It stays in the Cart, marked, and blocks checkout until removed. A line whose
+Dish is soft-deleted is dropped from the Cart silently instead.
 
 **Order**:
 A delivery request: Customer contacts, address, delivery time, Order items and
-total. Paid in cash on delivery. A Guest's Orders are found by name and phone
-and attach to a User who registers with the same phone.
+total. The total is the sum of the items: no minimum and no delivery fee. Paid
+in cash on delivery. A Guest sees the Order's Number once, on the confirmation
+page; the Admin finds a Guest's Orders by name and phone. They attach to a
+User who registers with the same phone.
 _Avoid_: Purchase, checkout (that is the step, not the record)
 
 **Price snapshot**:
@@ -94,13 +108,15 @@ is placed. Later price changes never touch it; an Admin's edit recalculates
 the total from the snapshots.
 
 **Order template**:
-A User's saved name, phone and address for Orders. The last used one is
-preselected.
+A User's saved name, phone and address for Orders, listed by its address. A
+User keeps at most 5. Checkout offers to save a new combination; the last used
+one is preselected.
 _Avoid_: Saved address, profile address
 
 **Delivery time**:
-When an Order should arrive: inside opening hours and no earlier than now plus
-1 hour.
+When an Order should arrive: a 15-minute step within today and the next 6
+days, inside that day's Schedule (closing time included) and no earlier than
+now plus 1 hour.
 
 ### Bookings
 
@@ -175,7 +191,8 @@ and demo Dishes with images and `favoritesCount`.
 
 - **Order**: new, accepted, delivery, completed; cancelled from new, accepted
   or delivery. completed and cancelled are final. A User may cancel only a new
-  Order.
+  Order. Each change is kept in the Order's history with its time and whether
+  the User or the Admin made it.
 - **Booking**: new, confirmed, done; cancelled from new or confirmed.
 - **Complaint**: new, in_review; in_review and resolved toggle.
 - **Review**: pending, then approved or rejected by the Admin.
