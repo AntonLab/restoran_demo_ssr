@@ -30,7 +30,7 @@ export default async function Page() {
       ) : (
         <>
           <ul className="divide-y">
-            {cart.lines.map((line) => (
+            {cart.lines.map((line, index) => (
               <li key={line.dishId} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-4">
                 <Image
                   src={"/images/" + line.imageSmall}
@@ -38,7 +38,8 @@ export default async function Page() {
                   width={96}
                   height={72}
                   unoptimized
-                  className="rounded-md object-cover"
+                  loading={index === 0 ? "eager" : "lazy"}
+                  className="h-18 w-24 shrink-0 rounded-md object-cover"
                 />
                 <div className={`min-w-0 flex-1 basis-40 ${line.unavailable ? "opacity-60" : ""}`}>
                   <p className="font-medium">{line.name}</p>
