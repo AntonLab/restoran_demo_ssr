@@ -17,9 +17,7 @@ export function TemplatesList({
   limit: number;
 }) {
   const [editing, setEditing] = useState<string | "new" | null>(null);
-  // The dialog closes while `deleting` is already null; the last value keeps its text from flashing empty.
   const [deleting, setDeleting] = useState<TemplateView | null>(null);
-  const [lastDeleting, setLastDeleting] = useState<TemplateView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const close = () => setEditing(null);
@@ -27,7 +25,6 @@ export function TemplatesList({
   const askDelete = (t: TemplateView) => {
     setError(null);
     setDeleting(t);
-    setLastDeleting(t);
   };
 
   const confirm = () => {
@@ -107,7 +104,7 @@ export function TemplatesList({
           setError(null);
         }}
         title="Delete this template?"
-        description={(deleting ?? lastDeleting)?.address ?? ""}
+        description={deleting?.address ?? ""}
         confirmLabel="Delete"
         keepLabel="Keep"
         pending={pending}

@@ -18,7 +18,6 @@ export function AddToCart({
   inStock: boolean;
   viewer: Viewer;
 }) {
-  // The confirmed value comes from props: the Actions revalidate the layout.
   const qty = viewer.cartQty[dishId] ?? 0;
   const [optimistic, setOptimistic] = useOptimistic(qty, (_: number, next: number) => next);
   const { pending: isPending, error, run: runAction } = useCartAction();

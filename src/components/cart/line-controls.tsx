@@ -7,7 +7,6 @@ import { MAX_QTY } from "@/lib/cart-limits";
 import type { CartLine } from "@/server/cart";
 
 export function LineControls({ line }: { line: CartLine }) {
-  // The Actions revalidate the layout, so the server value replaces the row: no local qty.
   const { pending: isPending, error, run } = useCartAction();
 
   return (

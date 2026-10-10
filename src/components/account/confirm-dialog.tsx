@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,14 +26,20 @@ type ConfirmDialogProps = {
 export function ConfirmDialog({
   open,
   onOpenChange,
-  title,
-  description,
+  title: titleProp,
+  description: descriptionProp,
   confirmLabel,
   keepLabel,
   pending,
   error,
   onConfirm,
 }: ConfirmDialogProps) {
+  // Dialog closes after target is null; keep the last value so the text doesn't flash empty.
+  const [last, setLast] = useState({ title: titleProp, description: descriptionProp });
+  const title = titleProp || last.title;
+  const description = descriptionProp || last.description;
+  if (title !== last.title || description !== last.description) setLast({ title, description });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>

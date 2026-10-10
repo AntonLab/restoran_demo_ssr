@@ -24,7 +24,7 @@ export async function checkoutAction(
     toOrderContext(shopper, clientIp(await headers())),
   );
   if (!result.ok) return { status: "error", error: result.error, fieldErrors: result.fieldErrors };
-  // Header count and /cart read the Cart, which the Order just emptied.
+  // Order emptied the Cart; see cart/actions.ts.
   revalidatePath("/", "layout");
   redirect(`/checkout/done?number=${result.number}`);
 }

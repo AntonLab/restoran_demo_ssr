@@ -20,11 +20,8 @@ import type { OrderRow } from "@/server/orders";
 const badge = "rounded-md bg-muted px-2 py-0.5 text-xs";
 
 export function OrdersTable({ orders, timezone }: { orders: OrderRow[]; timezone: string }) {
-  // One dialog for the list: a failed cancel revalidates the page and the row loses its
-  // Cancel button, so a dialog inside the row would unmount before the message is read.
+  // One dialog for the list: a failed cancel revalidates and drops the row's Cancel button, which would unmount a per-row dialog before the error is read.
   const [target, setTarget] = useState<number | null>(null);
-  // Keeps the title text while the dialog closes and target is already null.
-  const [lastTarget, setLastTarget] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -37,7 +34,6 @@ export function OrdersTable({ orders, timezone }: { orders: OrderRow[]; timezone
         onClick={() => {
           setError(null);
           setTarget(o.number);
-          setLastTarget(o.number);
         }}
       >
         Cancel
@@ -110,7 +106,7 @@ export function OrdersTable({ orders, timezone }: { orders: OrderRow[]; timezone
           setTarget(null);
           setError(null);
         }}
-        title={`Cancel order #${lastTarget}?`}
+        title={target === null ? "" : `Cancel order #${target}?`}
         description="The order will be cancelled. This cannot be undone."
         confirmLabel="Cancel order"
         keepLabel="Keep order"

@@ -14,12 +14,11 @@ async function run(
   if (!shopper) return NO_CART;
   if (!shopper.ownerKey) return EMPTY;
   const result = await fn(shopper.ownerKey);
-  // Header count, Menu steppers and /cart all read the Cart.
+  // Layout revalidate: header count, Menu steppers and /cart all read the Cart.
   if (result.ok) revalidatePath("/", "layout");
   return result;
 }
 
-// Only this action may set the cid cookie.
 export async function addToCartAction(dishId: string): Promise<CartResult> {
   return run(await ensureShopper(), (key) => addItem(key, dishId));
 }

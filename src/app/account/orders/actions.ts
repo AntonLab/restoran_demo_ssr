@@ -8,7 +8,7 @@ export async function cancelOrderAction(number: number): Promise<CancelResult> {
   const session = await actionUser();
   if (!session) return { ok: false, error: "Sign in as a user to do this." };
   const result = await cancelUserOrder(session.user.id, number);
-  // A failure with a status means the table shows a stale one.
+  // Revalidate on a failure that returned a status: the table's row is stale.
   if (result.ok || result.status) revalidatePath("/account/orders");
   return result;
 }
