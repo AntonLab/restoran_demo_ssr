@@ -6,6 +6,7 @@ import { Cart } from "@/server/models/cart";
 import { Category } from "@/server/models/category";
 import { Dish } from "@/server/models/dish";
 import { Order } from "@/server/models/order";
+import { OrderTemplate } from "@/server/models/order-template";
 import { placeOrder, type OrderContext } from "@/server/orders";
 import { createRateLimiter } from "@/server/rate-limit";
 import { clearTestDb, startTestDb, stopTestDb } from "@/server/test/db";
@@ -158,5 +159,67 @@ describe("placeOrder", () => {
     await cartWith(ctx, await mkDish());
     const r = await place(form(patch), ctx);
     expect(r).toMatchObject({ ok: false, fieldErrors: expect.any(Object) });
+  });
+});
+
+describe("placeOrder delivery time and templates", () => {
+  test.each([
+    ["a time past closing", { deliveryTime: "22:15" }],
+    ["a time inside the next hour", { deliveryTime: "10:30" }],
+    ["a time off the 15-minute grid", { deliveryTime: "11:20" }],
+    ["yesterday", { deliveryDate: "2026-10-11" }],
+    ["a day beyond the window", { deliveryDate: "2026-10-25" }],
+  ])("refuses %s as a field error and consumes no Number", async (_l, patch) => {
+    const ctx = guest();
+    await cartWith(ctx, await mkDish());
+    expect(await place(form(patch), ctx)).toMatchObject({
+      ok: false,
+      fieldErrors: { deliveryTime: [expect.any(String)] },
+    });
+    expect(await Order.countDocuments()).toBe(0);
+    expect(await place(form(), ctx)).toMatchObject({ ok: true, number: 1 });
+  });
+  test("a User's Order has userId and saves the template; a full list does not fail it", async () => {
+    const userId = uid();
+    const ctx: OrderContext = {
+      ownerKey: userCartKey(userId),
+      userId,
+      role: "user",
+      ip: "1.1.1.1",
+    };
+    await cartWith(ctx, await mkDish());
+    expect(await place(form({ saveTemplate: "on" }), ctx)).toMatchObject({ ok: true });
+    expect(String((await Order.findOne().lean())!.userId)).toBe(userId);
+    expect(await OrderTemplate.countDocuments({ userId })).toBe(1);
+    for (let i = 2; i <= 5; i++) {
+      await OrderTemplate.create({
+        userId,
+        name: "A",
+        phone: "+15550000000",
+        address: `${i} Other Street`,
+      });
+    }
+    await cartWith(ctx, await mkDish());
+    const r = await place(form({ address: "99 New Street", saveTemplate: "on" }), ctx);
+    expect(r).toMatchObject({ ok: true });
+    expect(await OrderTemplate.countDocuments({ userId })).toBe(5);
+  });
+  test("the IP limiter blocks the 2nd Order, and invalid input spends no hit", async () => {
+    const limiter = fresh(1);
+    const ctx = guest();
+    await place(form({ name: "" }), ctx, limiter);
+    await cartWith(ctx, await mkDish());
+    expect(await place(form(), ctx, limiter)).toMatchObject({ ok: true });
+    await cartWith(ctx, await mkDish());
+    expect(await place(form(), ctx, limiter)).toMatchObject({
+      ok: false,
+      error: expect.stringContaining("Too many"),
+    });
+  });
+  test("a Guest never creates a template", async () => {
+    const ctx = guest();
+    await cartWith(ctx, await mkDish());
+    await place(form({ saveTemplate: "on" }), ctx);
+    expect(await OrderTemplate.countDocuments()).toBe(0);
   });
 });

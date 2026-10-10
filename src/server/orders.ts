@@ -1,11 +1,12 @@
-import { deliveryInstant } from "@/lib/delivery-time";
+import { deliveryInstant, isValidDeliveryTime } from "@/lib/delivery-time";
 import { checkoutSchema } from "@/lib/order-schemas";
-import { type AccountFailure, guard } from "@/server/accounts";
+import { type AccountFailure, fieldFailure, guard } from "@/server/accounts";
 import { getCart } from "@/server/cart";
 import { nextNumber } from "@/server/counter";
 import { connectDb } from "@/server/db";
 import { Cart } from "@/server/models/cart";
 import { Order } from "@/server/models/order";
+import { recordCheckoutTemplate } from "@/server/order-templates";
 import { getSettings } from "@/server/queries/settings";
 import { createRateLimiter, type Limiter } from "@/server/rate-limit";
 
@@ -46,7 +47,10 @@ export async function placeOrder(
   if (cart.totalCents !== data.expectedTotalCents) {
     return { ok: false, error: "Prices changed, review your cart" };
   }
-  const { timezone } = await getSettings();
+  const { timezone, schedule } = await getSettings();
+  if (!isValidDeliveryTime(schedule, timezone, data.deliveryDate, data.deliveryTime, now)) {
+    return fieldFailure({ deliveryTime: ["Choose an available delivery time."] });
+  }
   // No transactions (accepted in the spec): two parallel submits may both pass the
   // checks above and create two Orders; a failed create burns a Number.
   const number = await nextNumber("order");
@@ -67,5 +71,13 @@ export async function placeOrder(
     history: [{ status: "new", at: now }],
   });
   await Cart.deleteOne({ ownerKey: ctx.ownerKey });
+  if (ctx.userId) {
+    await recordCheckoutTemplate(
+      ctx.userId,
+      { name: data.name, phone: data.phone, address: data.address },
+      data.saveTemplate,
+      now,
+    );
+  }
   return { ok: true, number, totalCents: cart.totalCents };
 }
