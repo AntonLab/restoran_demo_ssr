@@ -74,12 +74,17 @@ export async function placeOrder(
   });
   await Cart.deleteOne({ ownerKey: ctx.ownerKey });
   if (ctx.userId) {
-    await recordCheckoutTemplate(
-      ctx.userId,
-      { name: data.name, phone: data.phone, address: data.address },
-      data.saveTemplate,
-      now,
-    );
+    // A side effect: failing here after the Order exists would invite a duplicate submit.
+    try {
+      await recordCheckoutTemplate(
+        ctx.userId,
+        { name: data.name, phone: data.phone, address: data.address },
+        data.saveTemplate,
+        now,
+      );
+    } catch (error) {
+      console.error("Checkout template failed", error);
+    }
   }
   return { ok: true, number, totalCents: cart.totalCents };
 }

@@ -216,6 +216,26 @@ describe("placeOrder delivery time and templates", () => {
       error: expect.stringContaining("Too many"),
     });
   });
+  test("a template failure does not fail the placed Order", async () => {
+    const userId = uid();
+    const ctx: OrderContext = {
+      ownerKey: userCartKey(userId),
+      userId,
+      role: "user",
+      ip: "1.1.1.1",
+    };
+    await cartWith(ctx, await mkDish());
+    const updateOne = vi.spyOn(OrderTemplate, "updateOne").mockRejectedValueOnce(new Error("db"));
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect(await place(form({ saveTemplate: "on" }), ctx)).toMatchObject({ ok: true, number: 1 });
+      expect(logged).toHaveBeenCalled();
+    } finally {
+      updateOne.mockRestore();
+      logged.mockRestore();
+    }
+    expect(await Order.countDocuments()).toBe(1);
+  });
   test("a Guest never creates a template", async () => {
     const ctx = guest();
     await cartWith(ctx, await mkDish());

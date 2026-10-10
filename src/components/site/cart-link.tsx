@@ -11,7 +11,7 @@ export async function CartLink() {
     <Link
       href="/cart"
       className={navLinkClass}
-      aria-label={count > 0 ? `Cart, ${count} items` : "Cart"}
+      aria-label={count > 0 ? `Cart, ${count} ${count === 1 ? "item" : "items"}` : "Cart"}
     >
       Cart
       {count > 0 && (

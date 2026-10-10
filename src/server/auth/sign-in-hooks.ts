@@ -8,17 +8,21 @@ import { attachGuestOrders } from "@/server/orders";
 
 export async function afterSignIn(userId: string, role: "user" | "admin"): Promise<void> {
   if (role !== "user") return;
-  const store = await cookies();
-  const raw = store.get(CART_COOKIE)?.value;
-  if (raw === undefined) return;
-  const cid = parseCid(raw);
   try {
-    if (cid) await mergeGuestCart(cid, userId);
+    const store = await cookies();
+    const raw = store.get(CART_COOKIE)?.value;
+    if (raw === undefined) return;
+    const cid = parseCid(raw);
+    try {
+      if (cid) await mergeGuestCart(cid, userId);
+    } catch {
+      console.error("Cart merge failed");
+    }
+    // Deleted even when the merge failed: a stuck cookie would retry it at every sign-in.
+    store.delete(CART_COOKIE);
   } catch {
-    console.error("Cart merge failed");
+    console.error("Guest Cart cookie handling failed");
   }
-  // Deleted even when the merge failed: a stuck cookie would retry it at every sign-in.
-  store.delete(CART_COOKIE);
 }
 
 export async function afterRegister(userId: string, phone: string): Promise<void> {

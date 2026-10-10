@@ -31,5 +31,5 @@ test("a User may cancel only a new Order", () => {
 
 test("labels cover every status", () => {
   expect(ORDER_STATUS_LABELS.delivery).toBe("Delivery");
-  expect(Object.keys(ORDER_STATUS_LABELS).sort()).toEqual([...ORDER_STATUSES].sort());
+  expect(Object.keys(ORDER_STATUS_LABELS).toSorted()).toEqual(ORDER_STATUSES.toSorted());
 });

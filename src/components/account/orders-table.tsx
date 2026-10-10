@@ -23,6 +23,8 @@ export function OrdersTable({ orders, timezone }: { orders: OrderRow[]; timezone
   // One dialog for the list: a failed cancel revalidates the page and the row loses its
   // Cancel button, so a dialog inside the row would unmount before the message is read.
   const [target, setTarget] = useState<number | null>(null);
+  // Keeps the title text while the dialog closes and target is already null.
+  const [lastTarget, setLastTarget] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -35,6 +37,7 @@ export function OrdersTable({ orders, timezone }: { orders: OrderRow[]; timezone
         onClick={() => {
           setError(null);
           setTarget(o.number);
+          setLastTarget(o.number);
         }}
       >
         Cancel
@@ -107,7 +110,7 @@ export function OrdersTable({ orders, timezone }: { orders: OrderRow[]; timezone
           setTarget(null);
           setError(null);
         }}
-        title={`Cancel order #${target}?`}
+        title={`Cancel order #${lastTarget}?`}
         description="The order will be cancelled. This cannot be undone."
         confirmLabel="Cancel order"
         keepLabel="Keep order"
