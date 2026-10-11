@@ -53,7 +53,7 @@ describe("bookingAction", () => {
   test("a Guest Booking redirects to the confirmation and revalidates the layout", async () => {
     vi.mocked(getShopper).mockResolvedValue(guest);
     await expect(bookingAction({ status: "idle" }, fd())).rejects.toThrow(
-      "NEXT_REDIRECT:/booking/done?number=1",
+      /^NEXT_REDIRECT:\/booking\/done\?number=1&t=[0-9a-f-]{36}$/,
     );
     expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
     expect(await Booking.countDocuments()).toBe(1);

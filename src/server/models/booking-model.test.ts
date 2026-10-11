@@ -12,6 +12,7 @@ beforeEach(clearTestDb);
 
 const valid = (patch: Record<string, unknown> = {}) => ({
   number: 1,
+  viewToken: "token-1",
   contact: { name: "Ann", phone: "5551234567" },
   startsAt: new Date("2026-10-13T12:00:00Z"),
   guests: 2,

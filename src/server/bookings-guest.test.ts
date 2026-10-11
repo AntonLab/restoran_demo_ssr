@@ -19,6 +19,7 @@ const uid = () => String(new mongoose.Types.ObjectId());
 const mk = (userId: string | null, patch: Record<string, unknown> = {}) =>
   Booking.create({
     number: ++seq,
+    viewToken: `token-${seq}`,
     userId,
     contact: { name: "Ann", phone: "+15551234567" },
     startsAt: new Date("2030-01-01T12:00:00Z"),
@@ -38,9 +39,25 @@ const mk = (userId: string | null, patch: Record<string, unknown> = {}) =>
   });
 
 describe("getBookingConfirmation", () => {
-  test("a Guest sees a Booking by Number, without the phone", async () => {
+  test("a Guest with a wrong, missing or different-length token gets null", async () => {
     await mk(null);
-    const r = await getBookingConfirmation(1, null);
+    expect(await getBookingConfirmation(1, null, "token-2")).toBeNull();
+    expect(await getBookingConfirmation(1, null, "token")).toBeNull();
+    expect(await getBookingConfirmation(1, null, undefined)).toBeNull();
+    expect(await getBookingConfirmation(1, null, "")).toBeNull();
+  });
+  test("another User gets null even with the right token", async () => {
+    await mk(uid());
+    expect(await getBookingConfirmation(1, uid(), "token-1")).toBeNull();
+  });
+  test("a User sees their own Booking without a token", async () => {
+    const u = uid();
+    await mk(u);
+    expect(await getBookingConfirmation(1, u, undefined)).toMatchObject({ mine: true });
+  });
+  test("a Guest with the right token sees a Booking, without the phone or the token", async () => {
+    await mk(null);
+    const r = await getBookingConfirmation(1, null, "token-1");
     expect(r).toMatchObject({
       number: 1,
       guests: 2,
@@ -49,17 +66,11 @@ describe("getBookingConfirmation", () => {
       items: [{ name: "Borscht", qty: 2 }],
     });
     expect(r).not.toHaveProperty("contact");
-  });
-  test("a User sees only their own Booking", async () => {
-    const u = uid();
-    await mk(u);
-    await mk(uid());
-    expect(await getBookingConfirmation(1, u)).toMatchObject({ mine: true });
-    expect(await getBookingConfirmation(2, u)).toBeNull();
+    expect(r).not.toHaveProperty("viewToken");
   });
   test("an unknown or non-integer Number is null", async () => {
-    expect(await getBookingConfirmation(5, null)).toBeNull();
-    expect(await getBookingConfirmation(1.5, null)).toBeNull();
+    expect(await getBookingConfirmation(5, null, "token-5")).toBeNull();
+    expect(await getBookingConfirmation(1.5, null, "token-1")).toBeNull();
   });
 });
 

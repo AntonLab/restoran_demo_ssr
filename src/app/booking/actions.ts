@@ -26,5 +26,5 @@ export async function bookingAction(
   if (!result.ok) return { status: "error", error: result.error, fieldErrors: result.fieldErrors };
   // A Pre-order empties the Cart; see cart/actions.ts.
   revalidatePath("/", "layout");
-  redirect(`/booking/done?number=${result.number}`);
+  redirect(`/booking/done?number=${result.number}&t=${result.token}`);
 }

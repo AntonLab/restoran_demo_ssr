@@ -12,15 +12,17 @@ import { getSettings } from "@/server/queries/settings";
 export const metadata: Metadata = { title: "Table reserved", robots: { index: false } };
 
 export default async function Page({ searchParams }: PageProps<"/booking/done">) {
-  const number = parseOrderNumber((await searchParams).number);
+  const { number: rawNumber, t } = await searchParams;
+  const number = parseOrderNumber(rawNumber);
   if (number === null) notFound();
 
   const session = await getSession();
   const userId = session?.user.role === "user" ? session.user.id : null;
-  const booking = await getBookingConfirmation(number, userId);
+  const [booking, settings] = await Promise.all([
+    getBookingConfirmation(number, userId, typeof t === "string" ? t : undefined),
+    getSettings(),
+  ]);
   if (!booking) notFound();
-
-  const settings = await getSettings();
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-4 px-4 py-10">

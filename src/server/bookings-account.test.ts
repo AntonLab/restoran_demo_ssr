@@ -21,6 +21,7 @@ const uid = () => String(new mongoose.Types.ObjectId());
 const mk = (userId: string | null, patch: Record<string, unknown> = {}) =>
   Booking.create({
     number: ++seq,
+    viewToken: `token-${seq}`,
     userId,
     contact: { name: "Ann", phone: "+15551234567" },
     startsAt: hours(24),

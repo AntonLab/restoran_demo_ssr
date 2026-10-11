@@ -25,6 +25,8 @@ const historySchema = new Schema(
 const bookingSchema = new Schema(
   {
     number: { type: Number, required: true, unique: true, validate: Number.isInteger },
+    // Guests have no session, so this token is what lets them open their confirmation.
+    viewToken: { type: String, required: true, select: false },
     userId: { type: Schema.Types.ObjectId, ref: "User", default: null },
     contact: {
       name: { type: String, required: true },

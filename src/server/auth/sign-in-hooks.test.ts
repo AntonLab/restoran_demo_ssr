@@ -131,6 +131,7 @@ describe("afterRegister", () => {
     const u = uid();
     await Booking.create({
       number: 1,
+      viewToken: "token-1",
       userId: null,
       contact: { name: "Ann", phone: "+15551234567" },
       startsAt: new Date("2030-01-01T12:00:00Z"),

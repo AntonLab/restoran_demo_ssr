@@ -1,3 +1,4 @@
+import { randomUUID, timingSafeEqual } from "node:crypto";
 import { phoneField } from "@/lib/auth-schemas";
 import {
   ACTIVE_BOOKING_STATUSES,
@@ -30,7 +31,7 @@ import { createRateLimiter, type Limiter } from "@/server/rate-limit";
 const bookingLimiter = createRateLimiter({ limit: 5, windowMs: 3_600_000 });
 const bookingMutex = createMutex();
 
-export type PlaceBookingResult = { ok: true; number: number } | AccountFailure;
+export type PlaceBookingResult = { ok: true; number: number; token: string } | AccountFailure;
 
 const EMPTY_CART: AccountFailure = { ok: false, error: "Your cart is empty." };
 
@@ -97,8 +98,10 @@ export async function placeBooking(
       return fieldFailure({ time: ["This time is fully booked, pick another"] });
     }
     const number = await nextNumber("booking");
+    const token = randomUUID();
     await Booking.create({
       number,
+      viewToken: token,
       userId: ctx.userId,
       contact: { name: data.name, phone: data.phone },
       startsAt: deliveryInstant(data.date, data.time, timezone),
@@ -114,7 +117,7 @@ export async function placeBooking(
       status: "new",
       history: [{ status: "new", at: now }],
     });
-    return { ok: true as const, number };
+    return { ok: true as const, number, token };
   });
   // No transactions: a crash between the create and this delete leaves the Cart full.
   if (cart && result.ok) await Cart.deleteOne({ ownerKey: ctx.ownerKey });
@@ -222,18 +225,28 @@ export type BookingConfirmation = Pick<
   "number" | "startsAt" | "guests" | "items" | "totalCents"
 > & { mine: boolean };
 
-// The Number is guessable, so contact is never selected and a signed-in User sees only their own.
+function tokenMatches(stored: string | undefined, given: string | undefined): boolean {
+  if (!stored || !given) return false;
+  const a = Buffer.from(stored);
+  const b = Buffer.from(given);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+// The Number is guessable, so contact is never selected; a User sees only their own Booking
+// and a Guest needs the view token from the redirect.
 export async function getBookingConfirmation(
   number: number,
   userId: string | null,
+  token: string | undefined,
 ): Promise<BookingConfirmation | null> {
   await connectDb();
   if (!Number.isInteger(number)) return null;
   const booking = await Booking.findOne({ number })
-    .select("number startsAt guests items totalCents userId")
+    .select("number startsAt guests items totalCents userId +viewToken")
     .lean();
   if (!booking) return null;
-  if (userId !== null && String(booking.userId) !== userId) return null;
+  if (userId !== null ? String(booking.userId) !== userId : !tokenMatches(booking.viewToken, token))
+    return null;
   return {
     number: booking.number,
     startsAt: booking.startsAt,

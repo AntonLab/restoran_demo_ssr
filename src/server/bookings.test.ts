@@ -59,9 +59,10 @@ describe("placeBooking", () => {
   test("creates a new Booking with history and an increasing Number", async () => {
     const a = await place();
     const b = await place({ time: "15:00" });
-    expect(a).toEqual({ ok: true, number: 1 });
-    expect(b).toEqual({ ok: true, number: 2 });
-    const saved = await Booking.findOne({ number: 1 }).lean();
+    expect(a).toEqual({ ok: true, number: 1, token: expect.any(String) });
+    expect(b).toEqual({ ok: true, number: 2, token: expect.any(String) });
+    const saved = await Booking.findOne({ number: 1 }).select("+viewToken").lean();
+    expect(saved?.viewToken).toBe(a.ok && a.token);
     expect(saved).toMatchObject({
       status: "new",
       guests: 2,
