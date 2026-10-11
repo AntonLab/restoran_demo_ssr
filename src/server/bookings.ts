@@ -14,7 +14,7 @@ import {
   isBookableSlot,
 } from "@/lib/booking-slots";
 import { type BookingTableRow, withCancellable } from "@/lib/booking-view";
-import { deliveryInstant } from "@/lib/delivery-time";
+import { deliveryInstant, MS_PER_DAY, MS_PER_MINUTE } from "@/lib/delivery-time";
 import { type AccountFailure, fieldFailure, guard } from "@/server/accounts";
 import { type CartView, getCart } from "@/server/cart";
 import { nextNumber } from "@/server/counter";
@@ -33,8 +33,6 @@ const bookingMutex = createMutex();
 export type PlaceBookingResult = { ok: true; number: number } | AccountFailure;
 
 const EMPTY_CART: AccountFailure = { ok: false, error: "Your cart is empty." };
-const MS_PER_MINUTE = 60_000;
-const MS_PER_DAY = 86_400_000;
 
 async function listActiveStarts(now: Date): Promise<Date[]> {
   const margin = BOOKING_MINUTES * MS_PER_MINUTE;

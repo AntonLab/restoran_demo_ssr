@@ -5,7 +5,20 @@ export type DeliveryDay = { date: string; label: string; times: string[] };
 const STEP = 15;
 const LEAD_MINUTES = 60;
 const WINDOW_DAYS = 7;
-const MS_PER_DAY = 86_400_000;
+export const MS_PER_MINUTE = 60_000;
+export const MS_PER_DAY = 86_400_000;
+
+const dayLabelFormat = new Intl.DateTimeFormat("en-US", {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+});
+
+export const dayLabel = (date: Date) => dayLabelFormat.format(date);
+
+export const scheduleEntryFor = (schedule: ScheduleDay[], date: Date) =>
+  schedule.find((d) => d.day === WEEKDAYS[(date.getUTCDay() + 6) % 7]);
 
 // Building a DateTimeFormat is slow and Slot generation calls this hundreds of times.
 const formatters = new Map<string, Intl.DateTimeFormat>();
@@ -44,12 +57,12 @@ export function localParts(instant: Date, timeZone: string) {
   };
 }
 
-const toMinutes = (time: string) => {
+export const toMinutes = (time: string) => {
   const [hours, minutes] = time.split(":").map(Number);
   return hours * 60 + minutes;
 };
 
-const pad = (n: number) => String(n).padStart(2, "0");
+export const pad = (n: number) => String(n).padStart(2, "0");
 
 export function deliveryOptions(
   schedule: ScheduleDay[],
@@ -63,7 +76,7 @@ export function deliveryOptions(
   const days: DeliveryDay[] = [];
   for (let offset = 0; offset < WINDOW_DAYS; offset++) {
     const date = new Date(Date.UTC(local.year, local.month - 1, local.day) + offset * MS_PER_DAY);
-    const entry = schedule.find((d) => d.day === WEEKDAYS[(date.getUTCDay() + 6) % 7]);
+    const entry = scheduleEntryFor(schedule, date);
     if (!entry || entry.closed) continue;
     const openMin = toMinutes(entry.open);
     const closeMin = toMinutes(entry.close);
@@ -79,12 +92,7 @@ export function deliveryOptions(
     if (times.length === 0) continue;
     days.push({
       date: date.toISOString().slice(0, 10),
-      label: new Intl.DateTimeFormat("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        timeZone: "UTC",
-      }).format(date),
+      label: dayLabel(date),
       times,
     });
   }

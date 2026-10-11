@@ -1,22 +1,22 @@
-import { deliveryInstant, localParts } from "@/lib/delivery-time";
-import { WEEKDAYS, type ScheduleDay } from "@/lib/weekdays";
+import {
+  dayLabel,
+  deliveryInstant,
+  localParts,
+  MS_PER_DAY,
+  MS_PER_MINUTE,
+  pad,
+  scheduleEntryFor,
+  toMinutes,
+  type DeliveryDay,
+} from "@/lib/delivery-time";
+import type { ScheduleDay } from "@/lib/weekdays";
 
 export const BOOKING_MINUTES = 120;
 const SLOT_STEP = 30;
 export const BOOKING_WINDOW_DAYS = 30;
 const BOOKING_LEAD_MINUTES = 60;
 
-export type BookingDay = { date: string; label: string; times: string[] };
-
-const MS_PER_MINUTE = 60_000;
-const MS_PER_DAY = 86_400_000;
-
-const toMinutes = (time: string) => {
-  const [hours, minutes] = time.split(":").map(Number);
-  return hours * 60 + minutes;
-};
-
-const pad = (n: number) => String(n).padStart(2, "0");
+export type BookingDay = DeliveryDay;
 
 function slotHasRoom(instant: Date, active: Date[], limit: number): boolean {
   for (let k = 0; k < BOOKING_MINUTES / SLOT_STEP; k++) {
@@ -42,7 +42,7 @@ export function bookingOptions(
   const days: BookingDay[] = [];
   for (let offset = 0; offset < BOOKING_WINDOW_DAYS; offset++) {
     const date = new Date(Date.UTC(local.year, local.month - 1, local.day) + offset * MS_PER_DAY);
-    const entry = schedule.find((d) => d.day === WEEKDAYS[(date.getUTCDay() + 6) % 7]);
+    const entry = scheduleEntryFor(schedule, date);
     if (!entry || entry.closed) continue;
     const openMin = toMinutes(entry.open);
     const closeMin = toMinutes(entry.close);
@@ -55,16 +55,7 @@ export function bookingOptions(
       if (instant.getTime() >= earliest && slotHasRoom(instant, active, limit)) times.push(time);
     }
     if (times.length === 0) continue;
-    days.push({
-      date: isoDate,
-      label: new Intl.DateTimeFormat("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        timeZone: "UTC",
-      }).format(date),
-      times,
-    });
+    days.push({ date: isoDate, label: dayLabel(date), times });
   }
   return days;
 }
