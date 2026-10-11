@@ -5,7 +5,12 @@ import { Cart } from "@/server/models/cart";
 import { Category } from "@/server/models/category";
 import { Counter } from "@/server/models/counter";
 import { Dish } from "@/server/models/dish";
-import { placeBooking, type PlaceBookingResult } from "@/server/bookings";
+import {
+  loadBookingDays,
+  loadUserBookingsPage,
+  placeBooking,
+  type PlaceBookingResult,
+} from "@/server/bookings";
 import type { OrderContext } from "@/server/orders";
 import { createRateLimiter } from "@/server/rate-limit";
 import { clearTestDb, startTestDb, stopTestDb } from "@/server/test/db";
@@ -135,6 +140,31 @@ async function seedCart(ownerKey: string) {
   await addItem(ownerKey, String(dish._id));
   return dish;
 }
+
+describe("loadBookingDays", () => {
+  test("drops a time once the Slot is full at the given now", async () => {
+    await place();
+    await place();
+    const days = await loadBookingDays(NOW);
+    const day = days.find((d) => d.date === "2026-10-13");
+    expect(day?.times).not.toContain("12:00");
+    expect(day?.times).toContain("16:00");
+  });
+});
+
+describe("loadUserBookingsPage", () => {
+  const userId = "64b7f0f0f0f0f0f0f0f0f0f0";
+  const ctx: OrderContext = { ownerKey: userCartKey(userId), userId, role: "user", ip: "2.2.2.2" };
+  const filters = { tab: "upcoming", page: 1 } as const;
+
+  test("marks a future Booking cancellable and one starting exactly now not", async () => {
+    await place({}, ctx);
+    const before = await loadUserBookingsPage(userId, filters, new Date("2026-10-13T11:00:00Z"));
+    const atStart = await loadUserBookingsPage(userId, filters, new Date("2026-10-13T12:00:00Z"));
+    expect(before.bookings.map((b) => b.cancellable)).toEqual([true]);
+    expect(atStart.bookings.map((b) => b.cancellable)).toEqual([false]);
+  });
+});
 
 describe("placeBooking with Pre-order", () => {
   const pre = { preorder: "on", expectedTotalCents: "1000" };

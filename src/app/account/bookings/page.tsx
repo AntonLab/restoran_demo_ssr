@@ -5,9 +5,9 @@ import { BookingTabs } from "@/components/account/booking-tabs";
 import { BookingsTable } from "@/components/account/bookings-table";
 import { buttonVariants } from "@/components/ui/button";
 import { parseBookingFilters } from "@/lib/booking-schemas";
-import { bookingPageHrefs, withCancellable } from "@/lib/booking-view";
+import { bookingPageHrefs } from "@/lib/booking-view";
 import { requireUser } from "@/server/auth/guards";
-import { bookingClock, listUserBookings } from "@/server/bookings";
+import { loadUserBookingsPage } from "@/server/bookings";
 import { getSettings } from "@/server/queries/settings";
 
 export const metadata: Metadata = { title: "Bookings" };
@@ -15,9 +15,8 @@ export const metadata: Metadata = { title: "Bookings" };
 export default async function Page({ searchParams }: PageProps<"/account/bookings">) {
   const session = await requireUser("/account/bookings");
   const filters = parseBookingFilters(await searchParams);
-  const now = bookingClock();
   const settings = await getSettings();
-  const result = await listUserBookings(session.user.id, filters, now);
+  const result = await loadUserBookingsPage(session.user.id, filters);
   const { prev, next } = bookingPageHrefs(filters, result.pageCount);
 
   return (
@@ -43,10 +42,7 @@ export default async function Page({ searchParams }: PageProps<"/account/booking
         </div>
       ) : (
         <div className="flex flex-col gap-6">
-          <BookingsTable
-            bookings={withCancellable(result.bookings, now)}
-            timezone={settings.timezone}
-          />
+          <BookingsTable bookings={result.bookings} timezone={settings.timezone} />
           {result.pageCount > 1 && (
             <nav aria-label="Pages" className="flex items-center justify-between gap-2 text-sm">
               {prev ? (

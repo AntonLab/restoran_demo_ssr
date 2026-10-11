@@ -6,7 +6,14 @@ import {
   canUserCancel,
 } from "@/lib/booking-status";
 import { BOOKINGS_PAGE_SIZE, type BookingFilters, bookingSchema } from "@/lib/booking-schemas";
-import { BOOKING_MINUTES, BOOKING_WINDOW_DAYS, isBookableSlot } from "@/lib/booking-slots";
+import {
+  BOOKING_MINUTES,
+  BOOKING_WINDOW_DAYS,
+  type BookingDay,
+  bookingOptions,
+  isBookableSlot,
+} from "@/lib/booking-slots";
+import { type BookingTableRow, withCancellable } from "@/lib/booking-view";
 import { deliveryInstant } from "@/lib/delivery-time";
 import { type AccountFailure, fieldFailure, guard } from "@/server/accounts";
 import { type CartView, getCart } from "@/server/cart";
@@ -41,6 +48,17 @@ export async function listActiveStarts(now: Date): Promise<Date[]> {
     .select("startsAt")
     .lean();
   return rows.map((b) => b.startsAt);
+}
+
+export async function loadBookingDays(now: Date = new Date()): Promise<BookingDay[]> {
+  const [settings, active] = await Promise.all([getSettings(), listActiveStarts(now)]);
+  return bookingOptions(
+    settings.schedule,
+    settings.timezone,
+    active,
+    now,
+    settings.maxConcurrentBookings,
+  );
 }
 
 export async function placeBooking(
@@ -106,9 +124,6 @@ export async function placeBooking(
   return result;
 }
 
-// Pages cannot call `new Date()` during render (react/purity), so they take the clock from here.
-export const bookingClock = (): Date => new Date();
-
 export type BookingRow = {
   id: string;
   number: number;
@@ -159,6 +174,16 @@ export async function listUserBookings(
     page: filters.page,
     pageCount: Math.max(1, Math.ceil(total / BOOKINGS_PAGE_SIZE)),
   };
+}
+
+// One `now` decides both the tab split and which rows are still cancellable.
+export async function loadUserBookingsPage(
+  userId: string,
+  filters: BookingFilters,
+  now: Date = new Date(),
+): Promise<Omit<BookingPage, "bookings"> & { bookings: BookingTableRow[] }> {
+  const result = await listUserBookings(userId, filters, now);
+  return { ...result, bookings: withCancellable(result.bookings, now) };
 }
 
 export type BookingCancelResult =
