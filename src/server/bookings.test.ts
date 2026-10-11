@@ -1,7 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
-import { guestCartKey } from "@/server/cart";
+import { addItem, guestCartKey, userCartKey } from "@/server/cart";
 import { Booking } from "@/server/models/booking";
+import { Cart } from "@/server/models/cart";
+import { Category } from "@/server/models/category";
 import { Counter } from "@/server/models/counter";
+import { Dish } from "@/server/models/dish";
 import { placeBooking, type PlaceBookingResult } from "@/server/bookings";
 import type { OrderContext } from "@/server/orders";
 import { createRateLimiter } from "@/server/rate-limit";
@@ -23,7 +26,7 @@ vi.mock("@/server/queries/settings", () => ({
 
 beforeAll(async () => {
   await startTestDb();
-  await Promise.all([Booking.init(), Counter.init()]);
+  await Promise.all([Booking.init(), Counter.init(), Cart.init()]);
 });
 afterAll(stopTestDb);
 beforeEach(clearTestDb);
@@ -115,5 +118,80 @@ describe("placeBooking", () => {
   test("allows a duplicate Booking on the same phone and Slot", async () => {
     expect(await place({ time: "10:00" })).toMatchObject({ ok: true });
     expect(await place({ time: "10:00" })).toMatchObject({ ok: true });
+  });
+});
+
+async function seedCart(ownerKey: string) {
+  const category = await Category.create({ name: "Mains", status: "active" });
+  const dish = await Dish.create({
+    name: "Borscht",
+    shortDescription: "s",
+    fullDescription: "f",
+    weight: "300 g",
+    priceCents: 500,
+    categoryId: category._id,
+  });
+  await addItem(ownerKey, String(dish._id));
+  await addItem(ownerKey, String(dish._id));
+  return dish;
+}
+
+describe("placeBooking with Pre-order", () => {
+  const pre = { preorder: "on", expectedTotalCents: "1000" };
+  test("snapshots the Cart lines, stores the total and empties the Cart", async () => {
+    await seedCart(guest.ownerKey!);
+    expect(await place(pre)).toMatchObject({ ok: true });
+    const saved = await Booking.findOne({ number: 1 }).lean();
+    expect(saved?.totalCents).toBe(1000);
+    expect(saved?.items).toMatchObject([
+      { nameSnapshot: "Borscht", priceCentsSnapshot: 500, qty: 2 },
+    ]);
+    expect(await Cart.countDocuments({ ownerKey: guest.ownerKey })).toBe(0);
+  });
+  test("without Pre-order the Cart is untouched", async () => {
+    await seedCart(guest.ownerKey!);
+    await place();
+    expect(await Cart.countDocuments({ ownerKey: guest.ownerKey })).toBe(1);
+  });
+  test("refuses an empty Cart and a Guest with no Cart cookie", async () => {
+    const empty = { ok: false, error: "Your cart is empty." };
+    expect(await place(pre)).toEqual(empty);
+    expect(await place(pre, { ...guest, ownerKey: null })).toEqual(empty);
+    expect(await Booking.countDocuments()).toBe(0);
+  });
+  test("refuses a changed or missing total", async () => {
+    await seedCart(guest.ownerKey!);
+    const changed = { ok: false, error: "Prices changed, review your cart" };
+    expect(await place({ ...pre, expectedTotalCents: "999" })).toEqual(changed);
+    expect(await place({ preorder: "on" })).toEqual(changed);
+    expect(await Booking.countDocuments()).toBe(0);
+  });
+  test("an Unavailable item blocks the Booking and is named", async () => {
+    const dish = await seedCart(guest.ownerKey!);
+    await Dish.updateOne({ _id: dish._id }, { inStock: false });
+    const r = await place(pre);
+    expect(r).toMatchObject({ ok: false, error: expect.stringContaining("Borscht") });
+    expect(await Booking.countDocuments()).toBe(0);
+    expect(await Cart.countDocuments({ ownerKey: guest.ownerKey })).toBe(1);
+  });
+  test("a full Slot leaves the Cart in place", async () => {
+    await place();
+    await place();
+    await seedCart(guest.ownerKey!);
+    expect(await place(pre)).toMatchObject({ ok: false });
+    expect(await Cart.countDocuments({ ownerKey: guest.ownerKey })).toBe(1);
+  });
+  test("a User's Booking carries userId and clears the User's Cart", async () => {
+    const userId = "64b7f0f0f0f0f0f0f0f0f0f0";
+    const ctx: OrderContext = {
+      ownerKey: userCartKey(userId),
+      userId,
+      role: "user",
+      ip: "2.2.2.2",
+    };
+    await seedCart(ctx.ownerKey!);
+    await place(pre, ctx);
+    expect(String((await Booking.findOne().lean())?.userId)).toBe(userId);
+    expect(await Cart.countDocuments({ ownerKey: ctx.ownerKey })).toBe(0);
   });
 });

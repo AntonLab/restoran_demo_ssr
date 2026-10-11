@@ -3,10 +3,12 @@ import { bookingSchema } from "@/lib/booking-schemas";
 import { BOOKING_MINUTES, BOOKING_WINDOW_DAYS, isBookableSlot } from "@/lib/booking-slots";
 import { deliveryInstant } from "@/lib/delivery-time";
 import { type AccountFailure, fieldFailure, guard } from "@/server/accounts";
+import { type CartView, getCart } from "@/server/cart";
 import { nextNumber } from "@/server/counter";
 import { connectDb } from "@/server/db";
 import { createMutex } from "@/server/mutex";
 import { Booking } from "@/server/models/booking";
+import { Cart } from "@/server/models/cart";
 import type { OrderContext } from "@/server/orders";
 import { getSettings } from "@/server/queries/settings";
 import { createRateLimiter, type Limiter } from "@/server/rate-limit";
@@ -16,6 +18,7 @@ export const bookingMutex = createMutex();
 
 export type PlaceBookingResult = { ok: true; number: number } | AccountFailure;
 
+const EMPTY_CART: AccountFailure = { ok: false, error: "Your cart is empty." };
 const MS_PER_MINUTE = 60_000;
 const MS_PER_DAY = 86_400_000;
 
@@ -44,9 +47,25 @@ export async function placeBooking(
   if ("failure" in checked) return checked.failure;
   const data = checked.data;
   await connectDb();
+  let cart: CartView | null = null;
+  if (data.preorder) {
+    if (!ctx.ownerKey) return EMPTY_CART;
+    cart = await getCart(ctx.ownerKey);
+    if (cart.lines.length === 0) return EMPTY_CART;
+    if (cart.hasUnavailable) {
+      const names = cart.lines.filter((l) => l.unavailable).map((l) => l.name);
+      return {
+        ok: false,
+        error: `Some dishes are unavailable: ${names.join(", ")}. Remove them to continue.`,
+      };
+    }
+    if (cart.totalCents !== data.expectedTotalCents) {
+      return { ok: false, error: "Prices changed, review your cart" };
+    }
+  }
   // Mongo has no transaction here: the limit check and the insert must not interleave
   // between two requests. One Node process, so an in-memory lock is enough.
-  return bookingMutex.run(async () => {
+  const result = await bookingMutex.run(async () => {
     const { timezone, schedule, maxConcurrentBookings } = await getSettings();
     const active = await listActiveStarts(now);
     // Closed or too-soon Slots share the message: the page never offers them.
@@ -62,11 +81,20 @@ export async function placeBooking(
       contact: { name: data.name, phone: data.phone },
       startsAt: deliveryInstant(data.date, data.time, timezone),
       guests: data.guests,
-      items: [],
-      totalCents: 0,
+      items:
+        cart?.lines.map((l) => ({
+          dishId: l.dishId,
+          nameSnapshot: l.name,
+          priceCentsSnapshot: l.priceCents,
+          qty: l.qty,
+        })) ?? [],
+      totalCents: cart?.totalCents ?? 0,
       status: "new",
       history: [{ status: "new", at: now }],
     });
     return { ok: true as const, number };
   });
+  // No transactions: a crash between the create and this delete leaves the Cart full.
+  if (cart && result.ok) await Cart.deleteOne({ ownerKey: ctx.ownerKey });
+  return result;
 }
