@@ -1,12 +1,18 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { bookingAction, type BookingFormState } from "@/app/booking/actions";
 import { AuthField } from "@/components/auth/auth-field";
 import { PreorderFields } from "@/components/booking/preorder-fields";
 import { SlotFields } from "@/components/booking/slot-fields";
 import { Button } from "@/components/ui/button";
-import { clearDraft, restoreDraft, saveDraft, takeDraft } from "@/lib/booking-draft";
+import {
+  type BookingDraft,
+  clearDraft,
+  restoreDraft,
+  saveDraft,
+  takeDraft,
+} from "@/lib/booking-draft";
 import type { BookingDay } from "@/lib/booking-slots";
 import { initialDelivery, pickTime } from "@/lib/delivery-pick";
 import type { CartView } from "@/server/cart";
@@ -55,14 +61,34 @@ export function BookingForm({
   // The fields are controlled state, so a debounced effect covers every way of
   // leaving the page. While the submit runs the draft is dropped, so a booked
   // form is never restored; a failed submit saves it again.
+  const unsaved = useRef<BookingDraft | null>(null);
   useEffect(() => {
     if (pending) {
+      unsaved.current = null;
       clearDraft();
       return;
     }
-    const timer = setTimeout(() => saveDraft({ name, phone, guests, ...pick, preorder }), 300);
+    const draft = { name, phone, guests, ...pick, preorder };
+    unsaved.current = draft;
+    const timer = setTimeout(() => {
+      saveDraft(draft);
+      unsaved.current = null;
+    }, 300);
     return () => clearTimeout(timer);
   }, [name, phone, guests, pick, preorder, pending]);
+
+  // An edit made less than 300 ms before leaving would otherwise be lost.
+  useEffect(() => {
+    const flush = () => {
+      if (unsaved.current) saveDraft(unsaved.current);
+      unsaved.current = null;
+    };
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, []);
 
   const errors = state.status === "error" ? (state.fieldErrors ?? {}) : {};
 
