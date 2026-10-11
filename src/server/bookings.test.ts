@@ -106,6 +106,15 @@ describe("placeBooking", () => {
     await Booking.updateOne({ number: 2 }, { status: "done" });
     expect(await place()).toMatchObject({ ok: true });
   });
+  test("refuses at the limit when the Bookings are confirmed", async () => {
+    await place();
+    await place();
+    await Booking.updateMany({}, { status: "confirmed" });
+    expect(await place()).toMatchObject({
+      ok: false,
+      fieldErrors: { time: ["This time is fully booked, pick another"] },
+    });
+  });
   test("two parallel calls for the last place create exactly one Booking", async () => {
     await place();
     const results: PlaceBookingResult[] = await Promise.all([place(), place()]);

@@ -40,6 +40,19 @@ describe("bookingSchema", () => {
     expect(r.success && r.data).toMatchObject({ preorder: true, expectedTotalCents: 1250 });
     expect(bookingSchema.safeParse({ ...valid, preorder: "true" }).data?.preorder).toBe(true);
   });
+  test("with Pre-order off, parses with no expected total", () => {
+    const r = bookingSchema.safeParse(valid);
+    expect(r.success && r.data).toMatchObject({ preorder: false });
+    expect(r.data).not.toHaveProperty("expectedTotalCents");
+  });
+  test("accepts a 9-digit expected total and rejects a 10-digit one", () => {
+    expect(bookingSchema.safeParse({ ...valid, expectedTotalCents: "999999999" }).success).toBe(
+      true,
+    );
+    expect(bookingSchema.safeParse({ ...valid, expectedTotalCents: "1000000000" }).success).toBe(
+      false,
+    );
+  });
   test("rejects a malformed expected total", () => {
     expect(bookingSchema.safeParse({ ...valid, expectedTotalCents: "12.5" }).success).toBe(false);
   });

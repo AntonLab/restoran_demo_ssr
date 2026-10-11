@@ -39,6 +39,18 @@ describe("Booking model", () => {
   test("rejects an unknown status", async () => {
     await expect(Booking.create(valid({ status: "paid" }))).rejects.toThrow();
   });
+  test.each([{ phone: "5551234567" }, { name: "Ann" }])(
+    "rejects a contact missing a field",
+    async (contact) => {
+      await expect(Booking.create(valid({ contact }))).rejects.toThrow(/contact\.(name|phone)/);
+    },
+  );
+  test("rejects a missing startsAt", async () => {
+    await expect(Booking.create(valid({ startsAt: undefined }))).rejects.toThrow(/startsAt/);
+  });
+  test("rejects a non-integer totalCents", async () => {
+    await expect(Booking.create(valid({ totalCents: 12.5 }))).rejects.toThrow(/totalCents/);
+  });
   test("keeps the owner id", async () => {
     const userId = new mongoose.Types.ObjectId();
     const saved = await Booking.create(valid({ userId }));
