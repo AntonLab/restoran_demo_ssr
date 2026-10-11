@@ -18,6 +18,7 @@ import { initialDelivery, pickTime } from "@/lib/delivery-pick";
 import type { CartView } from "@/server/cart";
 
 const idle: BookingFormState = { status: "idle" };
+const DRAFT_DEBOUNCE_MS = 300;
 
 export function BookingForm({
   days,
@@ -58,9 +59,8 @@ export function BookingForm({
     // oxlint-disable-next-line react-hooks/exhaustive-deps, react/exhaustive-effect-dependencies
   }, []);
 
-  // The fields are controlled state, so a debounced effect covers every way of
-  // leaving the page. While the submit runs the draft is dropped, so a booked
-  // form is never restored; a failed submit saves it again.
+  // Debounced save covers every way of leaving the page. A pending submit clears the draft
+  // so a booked form is never restored; a failed submit re-saves it.
   const unsaved = useRef<BookingDraft | null>(null);
   useEffect(() => {
     if (pending) {
@@ -73,11 +73,11 @@ export function BookingForm({
     const timer = setTimeout(() => {
       saveDraft(draft);
       unsaved.current = null;
-    }, 300);
+    }, DRAFT_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [name, phone, guests, pick, preorder, pending]);
 
-  // An edit made less than 300 ms before leaving would otherwise be lost.
+  // Flush an edit still inside the debounce window on leave.
   useEffect(() => {
     const flush = () => {
       if (unsaved.current) saveDraft(unsaved.current);

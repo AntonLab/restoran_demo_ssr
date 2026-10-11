@@ -13,7 +13,7 @@ import { recordCheckoutTemplate } from "@/server/order-templates";
 import { escapeRegExp, parseObjectId } from "@/server/queries/menu";
 import { getSettings } from "@/server/queries/settings";
 import { createRateLimiter, type Limiter } from "@/server/rate-limit";
-import { tokenMatches } from "@/server/view-token";
+import { canView } from "@/server/view-token";
 
 export const orderLimiter = createRateLimiter({ limit: 10, windowMs: 3_600_000 });
 
@@ -171,8 +171,6 @@ export async function cancelUserOrder(
   return { ok: false, error: "This order can no longer be cancelled", status: order.status };
 }
 
-// The Number is guessable: a User sees only their own Order and a Guest needs the view
-// token from the redirect.
 export async function getOrderConfirmation(
   number: number,
   userId: string | null,
@@ -184,8 +182,7 @@ export async function getOrderConfirmation(
     .select("number totalCents userId +viewToken")
     .lean();
   if (!order) return null;
-  if (userId !== null ? String(order.userId) !== userId : !tokenMatches(order.viewToken, token))
-    return null;
+  if (!canView(order, userId, token)) return null;
   return { number: order.number, totalCents: order.totalCents, mine: userId !== null };
 }
 

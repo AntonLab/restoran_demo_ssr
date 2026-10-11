@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { buttonVariants } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
 import { parseOrderNumber } from "@/lib/order-number";
+import { singleParam } from "@/lib/search-param";
 import { getSession } from "@/server/auth/session";
 import { getOrderConfirmation } from "@/server/orders";
 
@@ -16,7 +17,7 @@ export default async function Page({ searchParams }: PageProps<"/checkout/done">
 
   const session = await getSession();
   const userId = session?.user.role === "user" ? session.user.id : null;
-  const order = await getOrderConfirmation(number, userId, typeof t === "string" ? t : undefined);
+  const order = await getOrderConfirmation(number, userId, singleParam(t));
   if (!order) notFound();
 
   return (
