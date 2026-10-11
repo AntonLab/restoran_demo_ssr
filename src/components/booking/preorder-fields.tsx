@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
 import { StatusBadge } from "@/components/site/status-badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatPrice } from "@/lib/format";
 import type { CartView } from "@/server/cart";

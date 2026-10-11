@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { LineControls } from "@/components/cart/line-controls";
 import { RemoveUnavailableButton } from "@/components/cart/remove-unavailable-button";
+import { StatusBadge } from "@/components/site/status-badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
 import { requireShopper } from "@/server/auth/shopper-cookie";
@@ -47,7 +48,7 @@ export default async function Page() {
                 </div>
                 <LineControls line={line} />
                 {line.unavailable ? (
-                  <span className="rounded-md bg-muted px-2 py-0.5 text-xs">Unavailable</span>
+                  <StatusBadge>Unavailable</StatusBadge>
                 ) : (
                   <span className="min-w-16 text-right font-semibold">
                     {formatPrice(line.lineTotalCents)}
