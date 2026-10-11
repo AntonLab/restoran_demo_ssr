@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
+import { StatusBadge } from "@/components/site/status-badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatPrice } from "@/lib/format";
 import type { CartView } from "@/server/cart";
@@ -40,9 +41,7 @@ export function PreorderFields({
                   {line.qty}× {line.name}
                 </span>
                 <span className="flex shrink-0 items-center gap-2">
-                  {line.unavailable && (
-                    <span className="rounded-md bg-muted px-2 py-0.5 text-xs">Unavailable</span>
-                  )}
+                  {line.unavailable && <StatusBadge>Unavailable</StatusBadge>}
                   {formatPrice(line.lineTotalCents)}
                 </span>
               </li>

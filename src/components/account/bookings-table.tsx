@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import { ConfirmDialog } from "@/components/account/confirm-dialog";
+import { useCancelDialog } from "@/components/account/use-cancel-dialog";
+import { StatusBadge } from "@/components/site/status-badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -17,8 +18,6 @@ import { bookingCancelFailureText, type BookingTableRow } from "@/lib/booking-vi
 import { formatDateTime, formatPrice } from "@/lib/format";
 import { formatItems } from "@/lib/order-view";
 
-const badge = "rounded-md bg-muted px-2 py-0.5 text-xs";
-
 const preOrder = (b: BookingTableRow) =>
   b.items.length === 0 ? "—" : `${formatItems(b.items)} · ${formatPrice(b.totalCents)}`;
 
@@ -29,10 +28,11 @@ export function BookingsTable({
   bookings: BookingTableRow[];
   timezone: string;
 }) {
-  // One dialog for the list: a failed cancel revalidates and drops the row's Cancel button, which would unmount a per-row dialog before the error shows.
-  const [target, setTarget] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const { target, error, pending, open, onOpenChange, confirm } = useCancelDialog(
+    cancelBookingAction,
+    bookingCancelFailureText,
+    "Could not cancel the booking. Try again.",
+  );
 
   const cancelButton = (b: BookingTableRow) =>
     b.cancellable && (
@@ -40,27 +40,11 @@ export function BookingsTable({
         variant="outline"
         size="sm"
         aria-label={`Cancel booking #${b.number}`}
-        onClick={() => {
-          setError(null);
-          setTarget(b.number);
-        }}
+        onClick={() => open(b.number)}
       >
         Cancel
       </Button>
     );
-
-  const confirm = () => {
-    if (target === null) return;
-    startTransition(async () => {
-      try {
-        const r = await cancelBookingAction(target);
-        if (r.ok) setTarget(null);
-        else setError(bookingCancelFailureText(r.error, r.status));
-      } catch {
-        setError("Could not cancel the booking. Try again.");
-      }
-    });
-  };
 
   return (
     <>
@@ -85,7 +69,7 @@ export function BookingsTable({
               <TableCell>{b.guests}</TableCell>
               <TableCell className="break-words whitespace-normal">{preOrder(b)}</TableCell>
               <TableCell>
-                <span className={badge}>{BOOKING_STATUS_LABELS[b.status]}</span>
+                <StatusBadge>{BOOKING_STATUS_LABELS[b.status]}</StatusBadge>
               </TableCell>
               <TableCell>{cancelButton(b)}</TableCell>
             </TableRow>
@@ -97,7 +81,7 @@ export function BookingsTable({
           <li key={b.id} className="flex flex-col gap-1 rounded-lg border p-4 text-sm">
             <div className="flex items-center justify-between gap-2">
               <span className="font-medium">#{b.number}</span>
-              <span className={badge}>{BOOKING_STATUS_LABELS[b.status]}</span>
+              <StatusBadge>{BOOKING_STATUS_LABELS[b.status]}</StatusBadge>
             </div>
             <span className="text-muted-foreground">{formatDateTime(b.startsAt, timezone)}</span>
             <span>Guests: {b.guests}</span>
@@ -108,11 +92,7 @@ export function BookingsTable({
       </ul>
       <ConfirmDialog
         open={target !== null}
-        onOpenChange={(open) => {
-          if (open) return;
-          setTarget(null);
-          setError(null);
-        }}
+        onOpenChange={onOpenChange}
         title={target === null ? "" : `Cancel booking #${target}?`}
         description="The booking will be cancelled. This cannot be undone."
         confirmLabel="Cancel booking"
