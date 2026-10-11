@@ -1,3 +1,4 @@
+import { phoneField } from "@/lib/auth-schemas";
 import {
   ACTIVE_BOOKING_STATUSES,
   BOOKING_STATUSES,
@@ -185,4 +186,48 @@ export async function cancelUserBooking(
   const booking = await Booking.findOne({ number, userId: id }).select("status").lean();
   if (!booking) return NOT_FOUND;
   return { ok: false, error: "This booking can no longer be cancelled", status: booking.status };
+}
+
+export type BookingConfirmation = {
+  number: number;
+  startsAt: Date;
+  guests: number;
+  items: { name: string; qty: number }[];
+  totalCents: number;
+  mine: boolean;
+};
+
+// The Number is guessable, so contact is never selected and a signed-in User sees only their own.
+export async function getBookingConfirmation(
+  number: number,
+  userId: string | null,
+): Promise<BookingConfirmation | null> {
+  await connectDb();
+  if (!Number.isInteger(number)) return null;
+  const booking = await Booking.findOne({ number })
+    .select("number startsAt guests items totalCents userId")
+    .lean();
+  if (!booking) return null;
+  if (userId !== null && String(booking.userId) !== userId) return null;
+  return {
+    number: booking.number,
+    startsAt: booking.startsAt,
+    guests: booking.guests,
+    items: booking.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),
+    totalCents: booking.totalCents,
+    mine: userId !== null,
+  };
+}
+
+// The userId: null filter keeps other Users' Bookings safe; a malformed phone must never match every Guest Booking.
+export async function attachGuestBookings(userId: string, phone: string): Promise<number> {
+  await connectDb();
+  const id = parseObjectId(userId);
+  const parsed = phoneField.safeParse(phone);
+  if (!id || !parsed.success) return 0;
+  const result = await Booking.updateMany(
+    { userId: null, "contact.phone": parsed.data },
+    { $set: { userId: id } },
+  );
+  return result.modifiedCount;
 }
