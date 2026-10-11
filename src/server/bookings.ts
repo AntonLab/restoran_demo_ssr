@@ -1,4 +1,4 @@
-import { randomUUID, timingSafeEqual } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import type { QueryFilter } from "mongoose";
 import { phoneField } from "@/lib/auth-schemas";
 import {
@@ -28,6 +28,7 @@ import type { OrderContext } from "@/server/orders";
 import { parseObjectId } from "@/server/queries/menu";
 import { getSettings } from "@/server/queries/settings";
 import { createRateLimiter, type Limiter } from "@/server/rate-limit";
+import { tokenMatches } from "@/server/view-token";
 
 const bookingLimiter = createRateLimiter({ limit: 5, windowMs: 3_600_000 });
 const bookingMutex = createMutex();
@@ -215,13 +216,6 @@ export type BookingConfirmation = Pick<
   BookingRow,
   "number" | "startsAt" | "guests" | "items" | "totalCents"
 > & { mine: boolean };
-
-function tokenMatches(stored: string | undefined, given: string | undefined): boolean {
-  if (!stored || !given) return false;
-  const a = Buffer.from(stored);
-  const b = Buffer.from(given);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
 
 // The Number is guessable, so contact is never selected; a User sees only their own Booking
 // and a Guest needs the view token from the redirect.

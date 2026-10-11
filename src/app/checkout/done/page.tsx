@@ -10,12 +10,13 @@ import { getOrderConfirmation } from "@/server/orders";
 export const metadata: Metadata = { title: "Order placed", robots: { index: false } };
 
 export default async function Page({ searchParams }: PageProps<"/checkout/done">) {
-  const number = parseOrderNumber((await searchParams).number);
+  const { number: rawNumber, t } = await searchParams;
+  const number = parseOrderNumber(rawNumber);
   if (number === null) notFound();
 
   const session = await getSession();
   const userId = session?.user.role === "user" ? session.user.id : null;
-  const order = await getOrderConfirmation(number, userId);
+  const order = await getOrderConfirmation(number, userId, typeof t === "string" ? t : undefined);
   if (!order) notFound();
 
   return (

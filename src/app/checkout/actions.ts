@@ -26,5 +26,5 @@ export async function checkoutAction(
   if (!result.ok) return { status: "error", error: result.error, fieldErrors: result.fieldErrors };
   // Order emptied the Cart; see cart/actions.ts.
   revalidatePath("/", "layout");
-  redirect(`/checkout/done?number=${result.number}`);
+  redirect(`/checkout/done?number=${result.number}&t=${result.token}`);
 }
