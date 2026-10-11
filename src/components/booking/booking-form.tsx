@@ -6,7 +6,7 @@ import { AuthField } from "@/components/auth/auth-field";
 import { PreorderFields } from "@/components/booking/preorder-fields";
 import { SlotFields } from "@/components/booking/slot-fields";
 import { Button } from "@/components/ui/button";
-import { restoreDraft, saveDraft, takeDraft } from "@/lib/booking-draft";
+import { clearDraft, restoreDraft, saveDraft, takeDraft } from "@/lib/booking-draft";
 import type { BookingDay } from "@/lib/booking-slots";
 import { initialDelivery, pickTime } from "@/lib/delivery-pick";
 import type { CartView } from "@/server/cart";
@@ -51,6 +51,18 @@ export function BookingForm({
     if (restored.preorder !== undefined && hasCart) setPreorder(restored.preorder);
     // oxlint-disable-next-line react-hooks/exhaustive-deps, react/exhaustive-effect-dependencies
   }, []);
+
+  // The fields are controlled state, so a debounced effect covers every way of
+  // leaving the page. While the submit runs the draft is dropped, so a booked
+  // form is never restored; a failed submit saves it again.
+  useEffect(() => {
+    if (pending) {
+      clearDraft();
+      return;
+    }
+    const timer = setTimeout(() => saveDraft({ name, phone, guests, ...pick, preorder }), 300);
+    return () => clearTimeout(timer);
+  }, [name, phone, guests, pick, preorder, pending]);
 
   const errors = state.status === "error" ? (state.fieldErrors ?? {}) : {};
 

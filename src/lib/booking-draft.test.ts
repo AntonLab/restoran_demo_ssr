@@ -1,5 +1,5 @@
-import { describe, expect, test } from "vitest";
-import { parseDraft, restoreDraft } from "@/lib/booking-draft";
+import { afterEach, describe, expect, test, vi } from "vitest";
+import { clearDraft, parseDraft, restoreDraft, saveDraft, takeDraft } from "@/lib/booking-draft";
 import type { BookingDay } from "@/lib/booking-slots";
 
 const days: BookingDay[] = [
@@ -26,6 +26,31 @@ describe("parseDraft", () => {
       expect(parseDraft(raw)).toBeNull();
     },
   );
+});
+
+describe("draft storage", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  test("clearDraft removes a saved draft", () => {
+    const map = new Map<string, string>();
+    vi.stubGlobal("sessionStorage", {
+      getItem: (k: string) => map.get(k) ?? null,
+      setItem: (k: string, v: string) => void map.set(k, v),
+      removeItem: (k: string) => void map.delete(k),
+    });
+    saveDraft(draft);
+    clearDraft();
+    expect(takeDraft()).toBeNull();
+  });
+
+  test("clearDraft does not throw when storage is blocked", () => {
+    vi.stubGlobal("sessionStorage", {
+      removeItem: () => {
+        throw new Error("blocked");
+      },
+    });
+    expect(() => clearDraft()).not.toThrow();
+  });
 });
 
 describe("restoreDraft", () => {

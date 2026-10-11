@@ -42,6 +42,12 @@ export function saveDraft(draft: BookingDraft): void {
   } catch {}
 }
 
+export function clearDraft(): void {
+  try {
+    sessionStorage.removeItem(KEY);
+  } catch {}
+}
+
 // Reads once and removes, so a draft never outlives the visit that restores it
 // (a booked form is therefore never restored).
 export function takeDraft(): BookingDraft | null {
