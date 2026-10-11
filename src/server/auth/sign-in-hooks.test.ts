@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { afterRegister, afterSignIn } from "@/server/auth/sign-in-hooks";
-import { addItem, getCart, guestCartKey, mergeGuestCart, userCartKey } from "@/server/cart";
 import { attachGuestBookings } from "@/server/bookings";
+import { addItem, getCart, guestCartKey, mergeGuestCart, userCartKey } from "@/server/cart";
 import { Booking } from "@/server/models/booking";
 import { Cart } from "@/server/models/cart";
 import { Category } from "@/server/models/category";

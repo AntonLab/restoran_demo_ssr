@@ -62,6 +62,7 @@ describe("bookingAction", () => {
     vi.mocked(getShopper).mockResolvedValue(guest);
     const state = await bookingAction({ status: "idle" }, fd({ guests: "0" }));
     expect(state).toMatchObject({ status: "error", fieldErrors: { guests: [expect.any(String)] } });
+    expect(await Booking.countDocuments()).toBe(0);
   });
   test("a full Slot is a field error on time", async () => {
     vi.mocked(getShopper).mockResolvedValue(guest);

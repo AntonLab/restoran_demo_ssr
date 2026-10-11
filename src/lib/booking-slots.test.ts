@@ -75,9 +75,10 @@ describe("bookingOptions", () => {
   });
 });
 
+const ok = (d: string, t: string) => isBookableSlot(week(), "UTC", [], d, t, NOW, 5);
+
 describe("isBookableSlot", () => {
   test("true for an offered Slot, false off-grid, closed, past and malformed", () => {
-    const ok = (d: string, t: string) => isBookableSlot(week(), "UTC", [], d, t, NOW, 5);
     expect(ok("2026-10-13", "12:00")).toBe(true);
     expect(ok("2026-10-13", "18:15")).toBe(false);
     expect(ok("2026-10-13", "20:30")).toBe(false);

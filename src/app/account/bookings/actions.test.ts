@@ -39,7 +39,7 @@ const mk = (userId: string, patch: Record<string, unknown> = {}) =>
   });
 
 describe("cancelBookingAction", () => {
-  test("a signed-out or Admin caller is refused", async () => {
+  test("refuses when there is no signed-in User", async () => {
     vi.mocked(actionUser).mockResolvedValue(null);
     expect(await cancelBookingAction(1)).toMatchObject({ ok: false });
   });

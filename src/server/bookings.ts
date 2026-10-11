@@ -27,8 +27,8 @@ import { parseObjectId } from "@/server/queries/menu";
 import { getSettings } from "@/server/queries/settings";
 import { createRateLimiter, type Limiter } from "@/server/rate-limit";
 
-export const bookingLimiter = createRateLimiter({ limit: 5, windowMs: 3_600_000 });
-export const bookingMutex = createMutex();
+const bookingLimiter = createRateLimiter({ limit: 5, windowMs: 3_600_000 });
+const bookingMutex = createMutex();
 
 export type PlaceBookingResult = { ok: true; number: number } | AccountFailure;
 
@@ -36,7 +36,7 @@ const EMPTY_CART: AccountFailure = { ok: false, error: "Your cart is empty." };
 const MS_PER_MINUTE = 60_000;
 const MS_PER_DAY = 86_400_000;
 
-export async function listActiveStarts(now: Date): Promise<Date[]> {
+async function listActiveStarts(now: Date): Promise<Date[]> {
   const margin = BOOKING_MINUTES * MS_PER_MINUTE;
   const rows = await Booking.find({
     status: { $in: ACTIVE_BOOKING_STATUSES },

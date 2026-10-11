@@ -2,9 +2,9 @@ import { deliveryInstant, localParts } from "@/lib/delivery-time";
 import { WEEKDAYS, type ScheduleDay } from "@/lib/weekdays";
 
 export const BOOKING_MINUTES = 120;
-export const SLOT_STEP = 30;
+const SLOT_STEP = 30;
 export const BOOKING_WINDOW_DAYS = 30;
-export const BOOKING_LEAD_MINUTES = 60;
+const BOOKING_LEAD_MINUTES = 60;
 
 export type BookingDay = { date: string; label: string; times: string[] };
 
