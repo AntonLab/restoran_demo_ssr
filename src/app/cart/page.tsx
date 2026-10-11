@@ -60,21 +60,26 @@ export default async function Page() {
             <p className="text-lg font-semibold">
               Total <span className="text-primary">{formatPrice(cart.totalCents)}</span>
             </p>
-            {cart.hasUnavailable ? (
-              <div className="flex flex-wrap items-center gap-3">
-                <Button disabled aria-describedby="checkout-blocked">
+            <div className="flex flex-wrap items-center gap-3">
+              {cart.hasUnavailable ? (
+                <>
+                  <Button disabled aria-describedby="checkout-blocked">
+                    Checkout
+                  </Button>
+                  <p id="checkout-blocked" className="text-sm text-muted-foreground">
+                    Remove unavailable items to check out.
+                  </p>
+                  <RemoveUnavailableButton />
+                </>
+              ) : (
+                <Link href="/checkout" className={buttonVariants()}>
                   Checkout
-                </Button>
-                <p id="checkout-blocked" className="text-sm text-muted-foreground">
-                  Remove unavailable items to check out.
-                </p>
-                <RemoveUnavailableButton />
-              </div>
-            ) : (
-              <Link href="/checkout" className={buttonVariants()}>
-                Checkout
+                </Link>
+              )}
+              <Link href="/booking?preorder=1" className={buttonVariants({ variant: "outline" })}>
+                Reserve a table
               </Link>
-            )}
+            </div>
           </div>
         </>
       )}

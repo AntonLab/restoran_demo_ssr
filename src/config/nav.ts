@@ -7,6 +7,7 @@ export const NAV_ITEMS: readonly { label: string; href: string }[] = [
 export const ACCOUNT_NAV: readonly { label: string; href: string }[] = [
   { label: "Details", href: "/account" },
   { label: "Orders", href: "/account/orders" },
+  { label: "Bookings", href: "/account/bookings" },
   { label: "Templates", href: "/account/templates" },
   { label: "Favorites", href: "/account/favorites" },
 ];

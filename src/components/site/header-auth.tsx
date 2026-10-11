@@ -10,6 +10,9 @@ export async function HeaderAuth() {
   if (!session) {
     return (
       <>
+        <Link href="/booking" className={navLinkClass}>
+          Reserve a table
+        </Link>
         <CartLink />
         <Link href="/login" className={navLinkClass}>
           Sign in
@@ -20,6 +23,11 @@ export async function HeaderAuth() {
   const admin = session.user.role === "admin";
   return (
     <>
+      {!admin && (
+        <Link href="/booking" className={navLinkClass}>
+          Reserve a table
+        </Link>
+      )}
       <CartLink />
       <Link href={admin ? "/admin" : "/account"} className={navLinkClass}>
         {admin ? "Admin" : "Account"}
