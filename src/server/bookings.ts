@@ -1,5 +1,10 @@
-import { ACTIVE_BOOKING_STATUSES } from "@/lib/booking-status";
-import { bookingSchema } from "@/lib/booking-schemas";
+import {
+  ACTIVE_BOOKING_STATUSES,
+  BOOKING_STATUSES,
+  type BookingStatus,
+  canUserCancel,
+} from "@/lib/booking-status";
+import { BOOKINGS_PAGE_SIZE, type BookingFilters, bookingSchema } from "@/lib/booking-schemas";
 import { BOOKING_MINUTES, BOOKING_WINDOW_DAYS, isBookableSlot } from "@/lib/booking-slots";
 import { deliveryInstant } from "@/lib/delivery-time";
 import { type AccountFailure, fieldFailure, guard } from "@/server/accounts";
@@ -10,6 +15,7 @@ import { createMutex } from "@/server/mutex";
 import { Booking } from "@/server/models/booking";
 import { Cart } from "@/server/models/cart";
 import type { OrderContext } from "@/server/orders";
+import { parseObjectId } from "@/server/queries/menu";
 import { getSettings } from "@/server/queries/settings";
 import { createRateLimiter, type Limiter } from "@/server/rate-limit";
 
@@ -97,4 +103,86 @@ export async function placeBooking(
   // No transactions: a crash between the create and this delete leaves the Cart full.
   if (cart && result.ok) await Cart.deleteOne({ ownerKey: ctx.ownerKey });
   return result;
+}
+
+export type BookingRow = {
+  id: string;
+  number: number;
+  startsAt: Date;
+  guests: number;
+  items: { name: string; qty: number }[];
+  totalCents: number;
+  status: BookingStatus;
+};
+
+export type BookingPage = {
+  bookings: BookingRow[];
+  total: number;
+  page: number;
+  pageCount: number;
+};
+
+export async function listUserBookings(
+  userId: string,
+  filters: BookingFilters,
+  now: Date = new Date(),
+): Promise<BookingPage> {
+  await connectDb();
+  const id = parseObjectId(userId);
+  if (!id) return { bookings: [], total: 0, page: 1, pageCount: 1 };
+  const upcoming = filters.tab === "upcoming";
+  const query = { userId: id, startsAt: upcoming ? { $gte: now } : { $lt: now } };
+  const direction = upcoming ? 1 : -1;
+  const [rows, total] = await Promise.all([
+    Booking.find(query)
+      .sort({ startsAt: direction, _id: direction })
+      .skip((filters.page - 1) * BOOKINGS_PAGE_SIZE)
+      .limit(BOOKINGS_PAGE_SIZE)
+      .lean(),
+    Booking.countDocuments(query),
+  ]);
+  return {
+    bookings: rows.map((b) => ({
+      id: String(b._id),
+      number: b.number,
+      startsAt: b.startsAt,
+      guests: b.guests,
+      items: b.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),
+      totalCents: b.totalCents,
+      status: b.status,
+    })),
+    total,
+    page: filters.page,
+    pageCount: Math.max(1, Math.ceil(total / BOOKINGS_PAGE_SIZE)),
+  };
+}
+
+export type BookingCancelResult =
+  | { ok: true }
+  | { ok: false; error: string; status?: BookingStatus };
+
+const NOT_FOUND = { ok: false, error: "Booking not found." } as const;
+const cancellable = BOOKING_STATUSES.filter(canUserCancel);
+
+export async function cancelUserBooking(
+  userId: string,
+  number: number,
+  now: Date = new Date(),
+): Promise<BookingCancelResult> {
+  await connectDb();
+  const id = parseObjectId(userId);
+  if (!id || !Number.isInteger(number) || number < 1) return NOT_FOUND;
+  // The status in the filter makes the check and the write one atomic step, so two
+  // parallel cancels (or an admin change in between) cannot both succeed.
+  const hit = await Booking.findOneAndUpdate(
+    { number, userId: id, status: { $in: cancellable }, startsAt: { $gt: now } },
+    {
+      $set: { status: "cancelled" },
+      $push: { history: { status: "cancelled", at: now, by: "user" } },
+    },
+  );
+  if (hit) return { ok: true };
+  const booking = await Booking.findOne({ number, userId: id }).select("status").lean();
+  if (!booking) return NOT_FOUND;
+  return { ok: false, error: "This booking can no longer be cancelled", status: booking.status };
 }
