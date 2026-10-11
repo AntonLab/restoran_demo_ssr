@@ -154,7 +154,9 @@ export async function listUserBookings(
   const id = parseObjectId(userId);
   if (!id) return { bookings: [], total: 0, page: 1, pageCount: 1 };
   const upcoming = filters.tab === "upcoming";
-  const query = { userId: id, startsAt: upcoming ? { $gte: now } : { $lt: now } };
+  const query: Record<string, unknown> = upcoming
+    ? { userId: id, startsAt: { $gte: now }, status: { $ne: "cancelled" } }
+    : { userId: id, $or: [{ startsAt: { $lt: now } }, { status: "cancelled" }] };
   const direction = upcoming ? 1 : -1;
   const [rows, total] = await Promise.all([
     Booking.find(query)

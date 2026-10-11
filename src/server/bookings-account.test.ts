@@ -58,6 +58,18 @@ describe("listUserBookings", () => {
     const old = await listUserBookings(u, past, NOW);
     expect(old.bookings.map((b) => b.number)).toEqual([5, 4]);
   });
+  test("a cancelled Booking is under Past whatever its start, sorted by start", async () => {
+    const u = uid();
+    await mk(u, { startsAt: hours(48), status: "cancelled" }); // 1: future, cancelled
+    await mk(u, { startsAt: hours(2) }); // 2: future, active
+    await mk(u, { startsAt: hours(-3) }); // 3: past, active
+    const up = await listUserBookings(u, upcoming, NOW);
+    expect(up.bookings.map((b) => b.number)).toEqual([2]);
+    expect(up.total).toBe(1);
+    const old = await listUserBookings(u, past, NOW);
+    expect(old.bookings.map((b) => b.number)).toEqual([1, 3]);
+    expect(old.total).toBe(2);
+  });
   test("maps the Pre-order and paginates by 10", async () => {
     const u = uid();
     for (let i = 0; i < 12; i++) await mk(u, { startsAt: hours(10 + i) });
