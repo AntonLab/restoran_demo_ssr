@@ -106,6 +106,9 @@ export async function placeBooking(
   return result;
 }
 
+// Pages cannot call `new Date()` during render (react/purity), so they take the clock from here.
+export const bookingClock = (): Date => new Date();
+
 export type BookingRow = {
   id: string;
   number: number;
