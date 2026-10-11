@@ -11,10 +11,12 @@ export function PreorderFields({
   cart,
   checked,
   onChange,
+  onEditCart,
 }: {
   cart: CartView | null;
   checked: boolean;
   onChange: (v: boolean) => void;
+  onEditCart: () => void;
 }) {
   if (cart === null || cart.lines.length === 0) return null;
   const unavailable = cart.lines.filter((l) => l.unavailable).map((l) => l.name);
@@ -58,7 +60,11 @@ export function PreorderFields({
             </p>
           )}
           <div className="flex items-center gap-3">
-            <Link href="/cart" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <Link
+              href="/cart"
+              onClick={onEditCart}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
               Edit cart
             </Link>
             <span className="text-sm text-muted-foreground">Pay at the venue</span>

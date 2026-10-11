@@ -1,12 +1,14 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { bookingAction, type BookingFormState } from "@/app/booking/actions";
 import { AuthField } from "@/components/auth/auth-field";
 import { PreorderFields } from "@/components/booking/preorder-fields";
 import { SlotFields } from "@/components/booking/slot-fields";
 import { Button } from "@/components/ui/button";
+import { restoreDraft, saveDraft, takeDraft } from "@/lib/booking-draft";
 import type { BookingDay } from "@/lib/booking-slots";
+import { initialDelivery, pickTime } from "@/lib/delivery-pick";
 import type { CartView } from "@/server/cart";
 
 const idle: BookingFormState = { status: "idle" };
@@ -29,6 +31,27 @@ export function BookingForm({
   const [preorder, setPreorder] = useState(
     preorderDefault && cart !== null && cart.lines.length > 0,
   );
+  const [pick, setPick] = useState(() => initialDelivery(days));
+  const hasCart = cart !== null && cart.lines.length > 0;
+
+  // Restored after hydration so the server render stays pure; sessionStorage
+  // is an external system the server render cannot read. Runs once on mount:
+  // the props are fixed for this page render.
+  useEffect(() => {
+    const draft = takeDraft();
+    if (!draft) return;
+    const restored = restoreDraft(draft, days);
+    setName(restored.name ?? defaults.name);
+    setPhone(restored.phone ?? defaults.phone);
+    setGuests(restored.guests ?? "2");
+    if (restored.date !== undefined) {
+      const times = days.find((d) => d.date === restored.date)?.times ?? [];
+      setPick({ date: restored.date, time: restored.time ?? pickTime(times, "") });
+    }
+    if (restored.preorder !== undefined && hasCart) setPreorder(restored.preorder);
+    // oxlint-disable-next-line react-hooks/exhaustive-deps, react/exhaustive-effect-dependencies
+  }, []);
+
   const errors = state.status === "error" ? (state.fieldErrors ?? {}) : {};
 
   return (
@@ -65,8 +88,18 @@ export function BookingForm({
         onChange={setGuests}
         error={errors.guests?.[0]}
       />
-      <SlotFields days={days} error={errors.time?.[0] ?? errors.date?.[0]} />
-      <PreorderFields cart={cart} checked={preorder} onChange={setPreorder} />
+      <SlotFields
+        days={days}
+        pick={pick}
+        onPick={setPick}
+        error={errors.time?.[0] ?? errors.date?.[0]}
+      />
+      <PreorderFields
+        cart={cart}
+        checked={preorder}
+        onChange={setPreorder}
+        onEditCart={() => saveDraft({ name, phone, guests, ...pick, preorder })}
+      />
       {state.status === "error" && (
         <p role="alert" className="text-sm text-destructive">
           {state.error}

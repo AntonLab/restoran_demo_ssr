@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { FieldError } from "@/components/feedback/field";
 import {
   Select,
@@ -10,13 +9,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { BookingDay } from "@/lib/booking-slots";
-import { initialDelivery, pickTime } from "@/lib/delivery-pick";
+import { pickTime } from "@/lib/delivery-pick";
 
 const labelClass = "text-sm font-medium";
 
-export function SlotFields({ days, error }: { days: BookingDay[]; error?: string }) {
-  const [{ date, time }, setPick] = useState(() => initialDelivery(days));
+export type SlotPick = { date: string; time: string };
 
+export function SlotFields({
+  days,
+  pick: { date, time },
+  onPick: setPick,
+  error,
+}: {
+  days: BookingDay[];
+  pick: SlotPick;
+  onPick: (pick: SlotPick) => void;
+  error?: string;
+}) {
   if (days.length === 0) {
     return (
       <p role="alert" className="text-sm text-destructive">
