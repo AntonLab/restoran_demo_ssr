@@ -17,7 +17,7 @@ import {
 import { type BookingTableRow, withCancellable } from "@/lib/booking-view";
 import { deliveryInstant, MS_PER_DAY, MS_PER_MINUTE } from "@/lib/delivery-time";
 import { type AccountFailure, fieldFailure, guard } from "@/server/accounts";
-import { type CartView, getCart } from "@/server/cart";
+import { type CartView, checkCart } from "@/server/cart";
 import { nextNumber } from "@/server/counter";
 import { connectDb } from "@/server/db";
 import { createMutex } from "@/server/mutex";
@@ -32,8 +32,6 @@ const bookingLimiter = createRateLimiter({ limit: 5, windowMs: 3_600_000 });
 const bookingMutex = createMutex();
 
 export type PlaceBookingResult = { ok: true; number: number; token: string } | AccountFailure;
-
-const EMPTY_CART: AccountFailure = { ok: false, error: "Your cart is empty." };
 
 async function listActiveStarts(now: Date): Promise<Date[]> {
   const margin = BOOKING_MINUTES * MS_PER_MINUTE;
@@ -73,19 +71,9 @@ export async function placeBooking(
   await connectDb();
   let cart: CartView | null = null;
   if (data.preorder) {
-    if (!ctx.ownerKey) return EMPTY_CART;
-    cart = await getCart(ctx.ownerKey);
-    if (cart.lines.length === 0) return EMPTY_CART;
-    if (cart.hasUnavailable) {
-      const names = cart.lines.filter((l) => l.unavailable).map((l) => l.name);
-      return {
-        ok: false,
-        error: `Some dishes are unavailable: ${names.join(", ")}. Remove them to continue.`,
-      };
-    }
-    if (cart.totalCents !== data.expectedTotalCents) {
-      return { ok: false, error: "Prices changed, review your cart" };
-    }
+    const checkedCart = await checkCart(ctx.ownerKey, data.expectedTotalCents);
+    if (!checkedCart.ok) return checkedCart;
+    cart = checkedCart.cart;
   }
   // Mongo has no transaction here: the limit check and the insert must not interleave.
   const result = await bookingMutex.run(async () => {
