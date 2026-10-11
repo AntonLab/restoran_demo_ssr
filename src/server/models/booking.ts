@@ -34,7 +34,7 @@ bookingSchema.index({ userId: 1, startsAt: -1 });
 bookingSchema.index({ "contact.phone": 1 });
 bookingSchema.index({ status: 1, startsAt: 1 });
 
-type BookingDoc = InferSchemaType<typeof bookingSchema>;
+export type BookingDoc = InferSchemaType<typeof bookingSchema>;
 
 export const Booking =
   (mongoose.models.Booking as Model<BookingDoc> | undefined) ??

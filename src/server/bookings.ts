@@ -1,4 +1,5 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
+import type { QueryFilter } from "mongoose";
 import { phoneField } from "@/lib/auth-schemas";
 import {
   ACTIVE_BOOKING_STATUSES,
@@ -21,7 +22,7 @@ import { type CartView, checkCart } from "@/server/cart";
 import { nextNumber } from "@/server/counter";
 import { connectDb } from "@/server/db";
 import { createMutex } from "@/server/mutex";
-import { Booking } from "@/server/models/booking";
+import { Booking, type BookingDoc } from "@/server/models/booking";
 import { Cart } from "@/server/models/cart";
 import type { OrderContext } from "@/server/orders";
 import { parseObjectId } from "@/server/queries/menu";
@@ -142,7 +143,7 @@ export async function listUserBookings(
   const id = parseObjectId(userId);
   if (!id) return { bookings: [], total: 0, page: 1, pageCount: 1 };
   const upcoming = filters.tab === "upcoming";
-  const query: Record<string, unknown> = upcoming
+  const query: QueryFilter<BookingDoc> = upcoming
     ? { userId: id, startsAt: { $gte: now }, status: { $ne: "cancelled" } }
     : { userId: id, $or: [{ startsAt: { $lt: now } }, { status: "cancelled" }] };
   const direction = upcoming ? 1 : -1;
