@@ -29,7 +29,7 @@ export function BookingsTable({
   bookings: BookingTableRow[];
   timezone: string;
 }) {
-  // One dialog for the list: a failed cancel revalidates and drops the row's Cancel button, which would unmount a per-row dialog before the error is read.
+  // One dialog for the list: a failed cancel revalidates and drops the row's Cancel button, which would unmount a per-row dialog before the error shows.
   const [target, setTarget] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();

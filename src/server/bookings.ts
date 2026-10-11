@@ -86,8 +86,7 @@ export async function placeBooking(
       return { ok: false, error: "Prices changed, review your cart" };
     }
   }
-  // Mongo has no transaction here: the limit check and the insert must not interleave
-  // between two requests. One Node process, so an in-memory lock is enough.
+  // Mongo has no transaction here: the limit check and the insert must not interleave.
   const result = await bookingMutex.run(async () => {
     const { timezone, schedule, maxConcurrentBookings } = await getSettings();
     const active = await listActiveStarts(now);
@@ -132,6 +131,10 @@ export type BookingRow = {
   status: BookingStatus;
 };
 
+function mapItems(items: { nameSnapshot: string; qty: number }[]): BookingRow["items"] {
+  return items.map((i) => ({ name: i.nameSnapshot, qty: i.qty }));
+}
+
 export type BookingPage = {
   bookings: BookingRow[];
   total: number;
@@ -164,7 +167,7 @@ export async function listUserBookings(
       number: b.number,
       startsAt: b.startsAt,
       guests: b.guests,
-      items: b.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),
+      items: mapItems(b.items),
       totalCents: b.totalCents,
       status: b.status,
     })),
@@ -214,14 +217,10 @@ export async function cancelUserBooking(
   return { ok: false, error: "This booking can no longer be cancelled", status: booking.status };
 }
 
-export type BookingConfirmation = {
-  number: number;
-  startsAt: Date;
-  guests: number;
-  items: { name: string; qty: number }[];
-  totalCents: number;
-  mine: boolean;
-};
+export type BookingConfirmation = Pick<
+  BookingRow,
+  "number" | "startsAt" | "guests" | "items" | "totalCents"
+> & { mine: boolean };
 
 // The Number is guessable, so contact is never selected and a signed-in User sees only their own.
 export async function getBookingConfirmation(
@@ -239,7 +238,7 @@ export async function getBookingConfirmation(
     number: booking.number,
     startsAt: booking.startsAt,
     guests: booking.guests,
-    items: booking.items.map((i) => ({ name: i.nameSnapshot, qty: i.qty })),
+    items: mapItems(booking.items),
     totalCents: booking.totalCents,
     mine: userId !== null,
   };

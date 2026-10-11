@@ -32,7 +32,7 @@ export function bookingPageHrefs(
 
 export type BookingTableRow = BookingRow & { cancellable: boolean };
 
-// Computed on the server: a client component reading the clock during render is impure.
+// Server-side: a client component reading the clock during render is impure.
 export function withCancellable(rows: BookingRow[], now: Date): BookingTableRow[] {
   return rows.map((r) => ({
     ...r,
