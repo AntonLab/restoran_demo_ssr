@@ -2,17 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 import { ensureShopper, getShopper } from "@/server/auth/shopper-cookie";
-import { addItem, type CartResult, removeItem, removeUnavailable, setQty } from "@/server/cart";
+import {
+  addItem,
+  type CartResult,
+  EMPTY_CART,
+  removeItem,
+  removeUnavailable,
+  setQty,
+} from "@/server/cart";
 
 const NO_CART: CartResult = { ok: false, error: "Admins do not have a cart." };
-const EMPTY: CartResult = { ok: false, error: "Your cart is empty." };
 
 async function run(
   shopper: { ownerKey: string | null } | null,
   fn: (ownerKey: string) => Promise<CartResult>,
 ): Promise<CartResult> {
   if (!shopper) return NO_CART;
-  if (!shopper.ownerKey) return EMPTY;
+  if (!shopper.ownerKey) return EMPTY_CART;
   const result = await fn(shopper.ownerKey);
   // Layout revalidate: header count, Menu steppers and /cart all read the Cart.
   if (result.ok) revalidatePath("/", "layout");

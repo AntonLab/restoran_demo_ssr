@@ -1,17 +1,6 @@
 import mongoose, { Schema, type InferSchemaType, type Model } from "mongoose";
 import { ORDER_STATUSES } from "@/lib/order-status";
-
-const cents = { type: Number, required: true, min: 0, validate: Number.isInteger };
-
-const itemSchema = new Schema(
-  {
-    dishId: { type: Schema.Types.ObjectId, required: true },
-    nameSnapshot: { type: String, required: true },
-    priceCentsSnapshot: cents,
-    qty: { type: Number, required: true, min: 1, validate: Number.isInteger },
-  },
-  { _id: false },
-);
+import { cents, itemSchema } from "@/server/models/shared";
 
 const historySchema = new Schema(
   {

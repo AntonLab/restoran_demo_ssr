@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { mergeGuestCart } from "@/server/cart";
 import { CART_COOKIE, parseCid } from "@/server/auth/shopper";
+import { attachGuestBookings } from "@/server/bookings";
 import { attachGuestOrders } from "@/server/orders";
 
 // Neither hook may throw: the Session already exists, and a thrown error
@@ -30,6 +31,11 @@ export async function afterRegister(userId: string, phone: string): Promise<void
     await attachGuestOrders(userId, phone);
   } catch {
     console.error("Guest Order attach failed");
+  }
+  try {
+    await attachGuestBookings(userId, phone);
+  } catch {
+    console.error("Guest Booking attach failed");
   }
   await afterSignIn(userId, "user");
 }

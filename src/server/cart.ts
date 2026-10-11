@@ -185,6 +185,29 @@ export async function getCart(ownerKey: string): Promise<CartView> {
   };
 }
 
+export const EMPTY_CART = { ok: false, error: "Your cart is empty." } as const;
+
+// The checks an Order and a Pre-order share before they turn the Cart into items.
+export async function checkCart(
+  ownerKey: string | null,
+  expectedTotalCents: number | undefined,
+): Promise<{ ok: true; cart: CartView } | { ok: false; error: string }> {
+  if (!ownerKey) return EMPTY_CART;
+  const cart = await getCart(ownerKey);
+  if (cart.lines.length === 0) return EMPTY_CART;
+  if (cart.hasUnavailable) {
+    const names = cart.lines.filter((l) => l.unavailable).map((l) => l.name);
+    return {
+      ok: false,
+      error: `Some dishes are unavailable: ${names.join(", ")}. Remove them to continue.`,
+    };
+  }
+  if (cart.totalCents !== expectedTotalCents) {
+    return { ok: false, error: "Prices changed, review your cart" };
+  }
+  return { ok: true, cart };
+}
+
 export async function mergeGuestCart(cid: string, userId: string): Promise<void> {
   await connectDb();
   const guest = await Cart.findOne({ ownerKey: guestCartKey(cid) }).lean();

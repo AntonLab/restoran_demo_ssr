@@ -29,8 +29,8 @@ A signed-in browser, identified by the `sid` cookie. The database keeps only
 the SHA-256 of its token; it lasts 7 days and every sign-in starts a new one.
 
 **Account area**:
-A User's own pages: contact details, Order history, Order templates and
-Favorites.
+A User's own pages: contact details, Order history, Bookings, Order templates
+and Favorites.
 
 **Order history**:
 A User's own Orders in the Account area, newest first, filtered by the date
@@ -121,20 +121,28 @@ now plus 1 hour.
 ### Bookings
 
 **Booking**:
-A table reservation: contact, start time, number of guests and an optional
-Pre-order. Lasts 2 hours, starts on a 30-minute Slot, must fit inside opening
-hours, and is refused when the Concurrent booking limit is reached. There is
-no table entity.
+A table reservation: contact, start time, 1 to 12 guests and an optional
+Pre-order. Lasts 2 hours, starts on a Slot, and is refused when the
+Concurrent booking limit is reached. A Guest or User may book; the Admin may
+not. A Guest's Bookings attach to a User who registers with the same phone.
+Later changes to the Schedule or the limit never touch existing Bookings.
+There is no table entity.
 _Avoid_: Reservation (in code), table order
 
 **Slot**:
-A 30-minute step a Booking may start on.
+A 30-minute step a Booking may start on: within today and the next 29 days, no
+earlier than now plus 1 hour, and with its whole 2 hours inside that day's
+Schedule (the last Slot starts 2 hours before closing).
 
 **Pre-order**:
-Dishes chosen with a Booking, with Price snapshots.
+The Cart's Dishes attached to a Booking, with Price snapshots. Chosen only by
+including the Cart; including it empties the Cart, and an Unavailable item
+blocks the Booking as it blocks checkout.
 
 **Concurrent booking limit**:
-`Settings.maxConcurrentBookings`: how many Bookings may overlap at once.
+`Settings.maxConcurrentBookings`: the most Bookings in status new or confirmed
+that may be in progress at the same instant. A Booking counts as one whatever
+its number of guests.
 
 ### Feedback
 
@@ -193,7 +201,9 @@ and demo Dishes with images and `favoritesCount`.
   or delivery. completed and cancelled are final. A User may cancel only a new
   Order. Each change is kept in the Order's history with its time and whether
   the User or the Admin made it.
-- **Booking**: new, confirmed, done; cancelled from new or confirmed.
+- **Booking**: new, confirmed, done; cancelled from new or confirmed. A User
+  may cancel only a new Booking that has not started. Each change is kept in
+  the Booking's history like an Order's.
 - **Complaint**: new, in_review; in_review and resolved toggle.
 - **Review**: pending, then approved or rejected by the Admin.
 

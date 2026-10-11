@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { LineControls } from "@/components/cart/line-controls";
 import { RemoveUnavailableButton } from "@/components/cart/remove-unavailable-button";
+import { StatusBadge } from "@/components/site/status-badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
 import { requireShopper } from "@/server/auth/shopper-cookie";
@@ -47,7 +48,7 @@ export default async function Page() {
                 </div>
                 <LineControls line={line} />
                 {line.unavailable ? (
-                  <span className="rounded-md bg-muted px-2 py-0.5 text-xs">Unavailable</span>
+                  <StatusBadge>Unavailable</StatusBadge>
                 ) : (
                   <span className="min-w-16 text-right font-semibold">
                     {formatPrice(line.lineTotalCents)}
@@ -60,21 +61,26 @@ export default async function Page() {
             <p className="text-lg font-semibold">
               Total <span className="text-primary">{formatPrice(cart.totalCents)}</span>
             </p>
-            {cart.hasUnavailable ? (
-              <div className="flex flex-wrap items-center gap-3">
-                <Button disabled aria-describedby="checkout-blocked">
+            <div className="flex flex-wrap items-center gap-3">
+              {cart.hasUnavailable ? (
+                <>
+                  <Button disabled aria-describedby="checkout-blocked">
+                    Checkout
+                  </Button>
+                  <p id="checkout-blocked" className="text-sm text-muted-foreground">
+                    Remove unavailable items to check out.
+                  </p>
+                  <RemoveUnavailableButton />
+                </>
+              ) : (
+                <Link href="/checkout" className={buttonVariants()}>
                   Checkout
-                </Button>
-                <p id="checkout-blocked" className="text-sm text-muted-foreground">
-                  Remove unavailable items to check out.
-                </p>
-                <RemoveUnavailableButton />
-              </div>
-            ) : (
-              <Link href="/checkout" className={buttonVariants()}>
-                Checkout
+                </Link>
+              )}
+              <Link href="/booking?preorder=1" className={buttonVariants({ variant: "outline" })}>
+                Reserve a table
               </Link>
-            )}
+            </div>
           </div>
         </>
       )}

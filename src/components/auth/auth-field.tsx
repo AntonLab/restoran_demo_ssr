@@ -11,6 +11,7 @@ type Props = {
   error?: string;
   required?: boolean;
   maxLength?: number;
+  inputMode?: "numeric";
 };
 
 // Controlled: see feedback/field.tsx.
@@ -25,6 +26,7 @@ export function AuthField({
   error,
   required,
   maxLength,
+  inputMode,
 }: Props) {
   return (
     <div className="flex flex-col gap-1">
@@ -38,6 +40,7 @@ export function AuthField({
         autoComplete={autoComplete}
         required={required}
         maxLength={maxLength}
+        inputMode={inputMode}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={Boolean(error)}

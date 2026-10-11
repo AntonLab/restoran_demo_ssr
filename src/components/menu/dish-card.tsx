@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { AddToCart } from "@/components/menu/add-to-cart";
 import { FavoriteButton } from "@/components/menu/favorite-button";
+import { StatusBadge } from "@/components/site/status-badge";
 import { formatPrice } from "@/lib/format";
 import type { Viewer } from "@/lib/viewer";
 import type { DishCardData } from "@/server/queries/menu";
@@ -40,9 +41,7 @@ export function DishCard({
         <p className="text-xs text-muted-foreground">{dish.weight}</p>
         <div className="mt-auto flex items-center justify-between gap-2">
           <span className="font-semibold text-primary">{formatPrice(dish.priceCents)}</span>
-          {!dish.inStock && (
-            <span className="rounded-md bg-muted px-2 py-0.5 text-xs">Out of stock</span>
-          )}
+          {!dish.inStock && <StatusBadge>Out of stock</StatusBadge>}
           <FavoriteButton dishId={dish.id} count={dish.favoritesCount} viewer={viewer} />
         </div>
         <AddToCart dishId={dish.id} name={dish.name} inStock={dish.inStock} viewer={viewer} />

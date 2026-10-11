@@ -3,7 +3,7 @@ import { deliveryInstant, isValidDeliveryTime } from "@/lib/delivery-time";
 import { checkoutSchema, ORDERS_PAGE_SIZE, type OrderFilters } from "@/lib/order-schemas";
 import { canUserCancel, ORDER_STATUSES, type OrderStatus } from "@/lib/order-status";
 import { type AccountFailure, fieldFailure, guard } from "@/server/accounts";
-import { getCart } from "@/server/cart";
+import { checkCart } from "@/server/cart";
 import { nextNumber } from "@/server/counter";
 import { connectDb } from "@/server/db";
 import { Cart } from "@/server/models/cart";
@@ -24,8 +24,6 @@ export type OrderContext = {
 
 export type PlaceOrderResult = { ok: true; number: number; totalCents: number } | AccountFailure;
 
-const EMPTY_CART: AccountFailure = { ok: false, error: "Your cart is empty." };
-
 export async function placeOrder(
   input: unknown,
   ctx: OrderContext,
@@ -37,19 +35,9 @@ export async function placeOrder(
   if ("failure" in checked) return checked.failure;
   const data = checked.data;
   await connectDb();
-  if (!ctx.ownerKey) return EMPTY_CART;
-  const cart = await getCart(ctx.ownerKey);
-  if (cart.lines.length === 0) return EMPTY_CART;
-  if (cart.hasUnavailable) {
-    const names = cart.lines.filter((l) => l.unavailable).map((l) => l.name);
-    return {
-      ok: false,
-      error: `Some dishes are unavailable: ${names.join(", ")}. Remove them to continue.`,
-    };
-  }
-  if (cart.totalCents !== data.expectedTotalCents) {
-    return { ok: false, error: "Prices changed, review your cart" };
-  }
+  const checkedCart = await checkCart(ctx.ownerKey, data.expectedTotalCents);
+  if (!checkedCart.ok) return checkedCart;
+  const cart = checkedCart.cart;
   const { timezone, schedule } = await getSettings();
   if (!isValidDeliveryTime(schedule, timezone, data.deliveryDate, data.deliveryTime, now)) {
     return fieldFailure({ deliveryTime: ["Choose an available delivery time."] });

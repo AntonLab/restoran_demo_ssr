@@ -1,7 +1,9 @@
 import mongoose from "mongoose";
 import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { afterRegister, afterSignIn } from "@/server/auth/sign-in-hooks";
+import { attachGuestBookings } from "@/server/bookings";
 import { addItem, getCart, guestCartKey, mergeGuestCart, userCartKey } from "@/server/cart";
+import { Booking } from "@/server/models/booking";
 import { Cart } from "@/server/models/cart";
 import { Category } from "@/server/models/category";
 import { Dish } from "@/server/models/dish";
@@ -20,8 +22,14 @@ vi.mock("@/server/orders", async (orig) => {
   return { ...real, attachGuestOrders: vi.fn(real.attachGuestOrders) };
 });
 
+vi.mock("@/server/bookings", async (orig) => {
+  const real = await orig<typeof import("@/server/bookings")>();
+  return { ...real, attachGuestBookings: vi.fn(real.attachGuestBookings) };
+});
+
 beforeAll(async () => {
   await startTestDb();
+  await Booking.init();
   await Cart.init();
   await Order.init();
 });
@@ -118,6 +126,37 @@ describe("afterRegister", () => {
     await afterRegister(u, "+15551234567");
     expect(String((await Order.findOne().lean())!.userId)).toBe(u);
     expect((await getCart(userCartKey(u))).count).toBe(1);
+  });
+  test("attaches Guest Bookings by phone", async () => {
+    const u = uid();
+    await Booking.create({
+      number: 1,
+      viewToken: "token-1",
+      userId: null,
+      contact: { name: "Ann", phone: "+15551234567" },
+      startsAt: new Date("2030-01-01T12:00:00Z"),
+      guests: 2,
+      items: [],
+      totalCents: 0,
+      status: "new",
+      history: [{ status: "new", at: new Date() }],
+    });
+    hasCookie(undefined);
+    await afterRegister(u, "+15551234567");
+    expect(String((await Booking.findOne().lean())!.userId)).toBe(u);
+  });
+  test("a failing Booking attach is logged; Orders attach and the Cart merge still run", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.mocked(attachGuestBookings).mockRejectedValueOnce(new Error("boom"));
+    const u = uid();
+    await mkOrder(null);
+    await addItem(guestCartKey(CID), await mkDish());
+    hasCookie(CID);
+    await expect(afterRegister(u, "+15551234567")).resolves.toBeUndefined();
+    expect(String((await Order.findOne().lean())!.userId)).toBe(u);
+    expect((await getCart(userCartKey(u))).count).toBe(1);
+    expect(log).toHaveBeenCalledWith("Guest Booking attach failed");
+    log.mockRestore();
   });
   test("a failing attach is logged and the Cart still merges", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
