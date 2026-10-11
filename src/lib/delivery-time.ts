@@ -7,18 +7,27 @@ const LEAD_MINUTES = 60;
 const WINDOW_DAYS = 7;
 const MS_PER_DAY = 86_400_000;
 
-function localParts(instant: Date, timeZone: string) {
-  const format = (zone: string) =>
-    new Intl.DateTimeFormat("en-US", {
-      timeZone: zone,
-      hourCycle: "h23",
-      year: "numeric",
-      month: "numeric",
-      day: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-      second: "numeric",
-    }).formatToParts(instant);
+// Building a DateTimeFormat is slow and Slot generation calls this hundreds of times.
+const formatters = new Map<string, Intl.DateTimeFormat>();
+
+export function localParts(instant: Date, timeZone: string) {
+  const format = (zone: string) => {
+    let formatter = formatters.get(zone);
+    if (!formatter) {
+      formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: zone,
+        hourCycle: "h23",
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric",
+      });
+      formatters.set(zone, formatter);
+    }
+    return formatter.formatToParts(instant);
+  };
   let parts: Intl.DateTimeFormatPart[];
   try {
     parts = format(timeZone);
