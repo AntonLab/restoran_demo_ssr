@@ -18,13 +18,25 @@ const BOOKING_LEAD_MINUTES = 60;
 
 export type BookingDay = DeliveryDay;
 
-function slotHasRoom(instant: Date, active: Date[], limit: number): boolean {
+// Count of sorted values <= x.
+function countUpTo(sorted: number[], x: number): number {
+  let lo = 0;
+  let hi = sorted.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (sorted[mid] <= x) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
+function slotHasRoom(instant: Date, sortedStarts: number[], limit: number): boolean {
   for (let k = 0; k < BOOKING_MINUTES / SLOT_STEP; k++) {
     const cell = instant.getTime() + k * SLOT_STEP * MS_PER_MINUTE;
-    const covering = active.filter((a) => {
-      const start = a.getTime();
-      return start <= cell && cell < start + BOOKING_MINUTES * MS_PER_MINUTE;
-    }).length;
+    // A Booking covers the cell when its start is in (cell - BOOKING_MINUTES, cell].
+    const covering =
+      countUpTo(sortedStarts, cell) -
+      countUpTo(sortedStarts, cell - BOOKING_MINUTES * MS_PER_MINUTE);
     if (covering + 1 > limit) return false;
   }
   return true;
@@ -39,6 +51,7 @@ export function bookingOptions(
 ): BookingDay[] {
   const local = localParts(now, timezone);
   const earliest = now.getTime() + BOOKING_LEAD_MINUTES * MS_PER_MINUTE;
+  const sortedStarts = active.map((a) => a.getTime()).toSorted((a, b) => a - b);
   const days: BookingDay[] = [];
   for (let offset = 0; offset < BOOKING_WINDOW_DAYS; offset++) {
     const date = new Date(Date.UTC(local.year, local.month - 1, local.day) + offset * MS_PER_DAY);
@@ -52,7 +65,8 @@ export function bookingOptions(
     for (let minute = openMin; minute <= closeMin - BOOKING_MINUTES; minute += SLOT_STEP) {
       const time = `${pad(Math.floor(minute / 60))}:${pad(minute % 60)}`;
       const instant = deliveryInstant(isoDate, time, timezone);
-      if (instant.getTime() >= earliest && slotHasRoom(instant, active, limit)) times.push(time);
+      if (instant.getTime() >= earliest && slotHasRoom(instant, sortedStarts, limit))
+        times.push(time);
     }
     if (times.length === 0) continue;
     days.push({ date: isoDate, label: dayLabel(date), times });
