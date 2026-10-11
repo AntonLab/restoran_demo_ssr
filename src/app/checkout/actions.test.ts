@@ -76,7 +76,7 @@ describe("checkoutAction", () => {
     vi.mocked(getShopper).mockResolvedValue(guest);
     await addItem(guest.ownerKey, await mkDish());
     await expect(checkoutAction({ status: "idle" }, fd())).rejects.toThrow(
-      "NEXT_REDIRECT:/checkout/done?number=1",
+      /^NEXT_REDIRECT:\/checkout\/done\?number=1&t=[\w-]{36}$/,
     );
     expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
     expect(await Order.countDocuments()).toBe(1);

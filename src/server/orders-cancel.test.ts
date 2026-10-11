@@ -20,6 +20,7 @@ const uid = () => String(oid());
 const mkOrder = (userId: string | null, patch: Record<string, unknown> = {}) =>
   Order.create({
     number: ++seq,
+    viewToken: `token-${seq}`,
     userId,
     customer: { name: "Ann", phone: "+15551234567" },
     address: "12 Main Street",
@@ -75,17 +76,34 @@ describe("cancelUserOrder", () => {
 });
 
 describe("getOrderConfirmation", () => {
-  test("returns Number and total, and whether the viewer owns it", async () => {
+  test("a Guest with a wrong, missing or different-length token gets null", async () => {
+    await mkOrder(null);
+    expect(await getOrderConfirmation(1, null, "token-2")).toBeNull();
+    expect(await getOrderConfirmation(1, null, "token")).toBeNull();
+    expect(await getOrderConfirmation(1, null, undefined)).toBeNull();
+    expect(await getOrderConfirmation(1, null, "")).toBeNull();
+  });
+  test("a Guest with the right token sees Number and total, without the token", async () => {
+    await mkOrder(null);
+    const r = await getOrderConfirmation(1, null, "token-1");
+    expect(r).toEqual({ number: 1, totalCents: 1700, mine: false });
+    expect(r).not.toHaveProperty("viewToken");
+  });
+  test("a User sees their own Order without a token", async () => {
     const u = uid();
     await mkOrder(u);
-    await mkOrder(null);
-    expect(await getOrderConfirmation(1, u)).toEqual({ number: 1, totalCents: 1700, mine: true });
-    expect(await getOrderConfirmation(1, uid())).toMatchObject({ mine: false });
-    expect(await getOrderConfirmation(2, null)).toMatchObject({ mine: false });
-    expect(await getOrderConfirmation(2, u)).toMatchObject({ mine: false });
+    expect(await getOrderConfirmation(1, u, undefined)).toEqual({
+      number: 1,
+      totalCents: 1700,
+      mine: true,
+    });
+  });
+  test("another User gets null even with the right token", async () => {
+    await mkOrder(uid());
+    expect(await getOrderConfirmation(1, uid(), "token-1")).toBeNull();
   });
   test("an unknown or non-integer Number is null", async () => {
-    expect(await getOrderConfirmation(7, null)).toBeNull();
-    expect(await getOrderConfirmation(1.5, null)).toBeNull();
+    expect(await getOrderConfirmation(7, null, "token-7")).toBeNull();
+    expect(await getOrderConfirmation(1.5, null, "token-1")).toBeNull();
   });
 });

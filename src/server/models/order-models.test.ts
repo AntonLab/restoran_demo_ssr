@@ -17,6 +17,7 @@ const id = () => String(oid());
 const line = (qty = 1) => ({ dishId: oid(), qty });
 const orderData = (patch: Record<string, unknown> = {}) => ({
   number: 1,
+  viewToken: "token-1",
   customer: { name: "Ann", phone: "+15551234567" },
   address: "12 Main St",
   deliveryAt: new Date(),

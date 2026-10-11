@@ -13,7 +13,11 @@ import {
 import { guestCartKey } from "@/server/cart";
 import { createRateLimiter } from "@/server/rate-limit";
 
-const newCartLimiter = createRateLimiter({ limit: 30, windowMs: 3_600_000 });
+export const NEW_GUEST_CARTS_PER_HOUR = 30;
+export const newCartLimiter = createRateLimiter({
+  limit: NEW_GUEST_CARTS_PER_HOUR,
+  windowMs: 3_600_000,
+});
 
 export async function getShopper(): Promise<Shopper | null> {
   return resolveShopper(await getSession(), (await cookies()).get(CART_COOKIE)?.value);

@@ -73,7 +73,9 @@ describe("placeOrder", () => {
     const ctx = guest();
     await cartWith(ctx, d);
     const r = await place(form(), ctx);
-    expect(r).toEqual({ ok: true, number: 1, totalCents: 850 });
+    expect(r).toEqual({ ok: true, number: 1, totalCents: 850, token: expect.any(String) });
+    const saved = await Order.findOne({ number: 1 }).select("+viewToken").lean();
+    expect(saved?.viewToken).toBe(r.ok && r.token);
     const order = (await Order.findOne({ number: 1 }).lean())!;
     expect(order).toMatchObject({
       userId: null,

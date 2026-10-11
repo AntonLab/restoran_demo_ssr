@@ -237,6 +237,18 @@ describe("concurrent edits", () => {
     }
     expect(await cartQuantities(GUEST)).toEqual({ [b]: 7 });
   });
+  test("two concurrent adds of one Dish both succeed", async () => {
+    const d = await mkDish();
+    const results = await Promise.all([addItem(GUEST, d), addItem(GUEST, d)]);
+    expect(results).toEqual([{ ok: true }, { ok: true }]);
+    expect(await cartQuantities(GUEST)).toEqual({ [d]: 2 });
+  });
+  test("two concurrent adds of different Dishes both succeed", async () => {
+    const [a, b] = [await mkDish(), await mkDish()];
+    const results = await Promise.all([addItem(GUEST, a), addItem(GUEST, b)]);
+    expect(results).toEqual([{ ok: true }, { ok: true }]);
+    expect(await cartQuantities(GUEST)).toEqual({ [a]: 1, [b]: 1 });
+  });
   test("parallel edits of one Cart all resolve", async () => {
     const dishes = [await mkDish(), await mkDish(), await mkDish()];
     for (const d of dishes) await addItem(GUEST, d);

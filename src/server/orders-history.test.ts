@@ -21,6 +21,7 @@ const uid = () => String(oid());
 const mkOrder = (userId: string | null, patch: Record<string, unknown> = {}) =>
   Order.create({
     number: ++seq,
+    viewToken: `token-${seq}`,
     userId,
     customer: { name: "Ann", phone: "+15551234567" },
     address: "12 Main Street",

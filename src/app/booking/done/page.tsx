@@ -5,6 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { formatDateTime, formatPrice } from "@/lib/format";
 import { formatItems } from "@/lib/order-view";
 import { parseOrderNumber } from "@/lib/order-number";
+import { singleParam } from "@/lib/search-param";
 import { getSession } from "@/server/auth/session";
 import { getBookingConfirmation } from "@/server/bookings";
 import { getSettings } from "@/server/queries/settings";
@@ -19,7 +20,7 @@ export default async function Page({ searchParams }: PageProps<"/booking/done">)
   const session = await getSession();
   const userId = session?.user.role === "user" ? session.user.id : null;
   const [booking, settings] = await Promise.all([
-    getBookingConfirmation(number, userId, typeof t === "string" ? t : undefined),
+    getBookingConfirmation(number, userId, singleParam(t)),
     getSettings(),
   ]);
   if (!booking) notFound();

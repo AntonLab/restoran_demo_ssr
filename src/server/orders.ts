@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { phoneField } from "@/lib/auth-schemas";
 import { deliveryInstant, isValidDeliveryTime } from "@/lib/delivery-time";
 import { checkoutSchema, ORDERS_PAGE_SIZE, type OrderFilters } from "@/lib/order-schemas";
@@ -12,6 +13,7 @@ import { recordCheckoutTemplate } from "@/server/order-templates";
 import { escapeRegExp, parseObjectId } from "@/server/queries/menu";
 import { getSettings } from "@/server/queries/settings";
 import { createRateLimiter, type Limiter } from "@/server/rate-limit";
+import { canView } from "@/server/view-token";
 
 export const orderLimiter = createRateLimiter({ limit: 10, windowMs: 3_600_000 });
 
@@ -22,7 +24,9 @@ export type OrderContext = {
   ip: string;
 };
 
-export type PlaceOrderResult = { ok: true; number: number; totalCents: number } | AccountFailure;
+export type PlaceOrderResult =
+  | { ok: true; number: number; totalCents: number; token: string }
+  | AccountFailure;
 
 export async function placeOrder(
   input: unknown,
@@ -45,8 +49,10 @@ export async function placeOrder(
   // No transactions (accepted in the spec): two parallel submits may both pass the
   // checks above and create two Orders; a failed create burns a Number.
   const number = await nextNumber("order");
+  const token = randomUUID();
   await Order.create({
     number,
+    viewToken: token,
     userId: ctx.userId,
     customer: { name: data.name, phone: data.phone },
     address: data.address,
@@ -75,7 +81,7 @@ export async function placeOrder(
       console.error("Checkout template failed", error);
     }
   }
-  return { ok: true, number, totalCents: cart.totalCents };
+  return { ok: true, number, totalCents: cart.totalCents, token };
 }
 
 export type OrderRow = {
@@ -168,16 +174,16 @@ export async function cancelUserOrder(
 export async function getOrderConfirmation(
   number: number,
   userId: string | null,
+  token: string | undefined,
 ): Promise<{ number: number; totalCents: number; mine: boolean } | null> {
   await connectDb();
   if (!Number.isInteger(number)) return null;
-  const order = await Order.findOne({ number }).select("number totalCents userId").lean();
+  const order = await Order.findOne({ number })
+    .select("number totalCents userId +viewToken")
+    .lean();
   if (!order) return null;
-  return {
-    number: order.number,
-    totalCents: order.totalCents,
-    mine: userId !== null && String(order.userId) === userId,
-  };
+  if (!canView(order, userId, token)) return null;
+  return { number: order.number, totalCents: order.totalCents, mine: userId !== null };
 }
 
 // The userId: null filter keeps other Users' Orders safe; a malformed phone must never match every Guest Order.

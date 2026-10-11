@@ -1,4 +1,4 @@
-import { randomUUID, timingSafeEqual } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import type { QueryFilter } from "mongoose";
 import { phoneField } from "@/lib/auth-schemas";
 import {
@@ -28,6 +28,7 @@ import type { OrderContext } from "@/server/orders";
 import { parseObjectId } from "@/server/queries/menu";
 import { getSettings } from "@/server/queries/settings";
 import { createRateLimiter, type Limiter } from "@/server/rate-limit";
+import { canView } from "@/server/view-token";
 
 const bookingLimiter = createRateLimiter({ limit: 5, windowMs: 3_600_000 });
 const bookingMutex = createMutex();
@@ -216,15 +217,7 @@ export type BookingConfirmation = Pick<
   "number" | "startsAt" | "guests" | "items" | "totalCents"
 > & { mine: boolean };
 
-function tokenMatches(stored: string | undefined, given: string | undefined): boolean {
-  if (!stored || !given) return false;
-  const a = Buffer.from(stored);
-  const b = Buffer.from(given);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
-
-// The Number is guessable, so contact is never selected; a User sees only their own Booking
-// and a Guest needs the view token from the redirect.
+// Contact is never selected: the confirmation page does not show it.
 export async function getBookingConfirmation(
   number: number,
   userId: string | null,
@@ -236,8 +229,7 @@ export async function getBookingConfirmation(
     .select("number startsAt guests items totalCents userId +viewToken")
     .lean();
   if (!booking) return null;
-  if (userId !== null ? String(booking.userId) !== userId : !tokenMatches(booking.viewToken, token))
-    return null;
+  if (!canView(booking, userId, token)) return null;
   return {
     number: booking.number,
     startsAt: booking.startsAt,
