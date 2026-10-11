@@ -48,13 +48,11 @@ export function clearDraft(): void {
   } catch {}
 }
 
-// Reads once and removes, so a draft never outlives the visit that restores it
-// (a booked form is therefore never restored).
-export function takeDraft(): BookingDraft | null {
+// Does not remove: strict mode mounts the restore effect twice and the second read must
+// still find the draft. A submit clears it (clearDraft) so a booked form is never restored.
+export function readDraft(): BookingDraft | null {
   try {
-    const raw = sessionStorage.getItem(KEY);
-    sessionStorage.removeItem(KEY);
-    return parseDraft(raw);
+    return parseDraft(sessionStorage.getItem(KEY));
   } catch {
     return null;
   }

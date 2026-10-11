@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { clearDraft, parseDraft, restoreDraft, saveDraft, takeDraft } from "@/lib/booking-draft";
+import { clearDraft, parseDraft, readDraft, restoreDraft, saveDraft } from "@/lib/booking-draft";
 import type { BookingDay } from "@/lib/booking-slots";
 
 const days: BookingDay[] = [
@@ -40,7 +40,19 @@ describe("draft storage", () => {
     });
     saveDraft(draft);
     clearDraft();
-    expect(takeDraft()).toBeNull();
+    expect(readDraft()).toBeNull();
+  });
+
+  test("readDraft leaves the draft stored, so a second read gets it too", () => {
+    const map = new Map<string, string>();
+    vi.stubGlobal("sessionStorage", {
+      getItem: (k: string) => map.get(k) ?? null,
+      setItem: (k: string, v: string) => void map.set(k, v),
+      removeItem: (k: string) => void map.delete(k),
+    });
+    saveDraft(draft);
+    expect(readDraft()).toEqual(draft);
+    expect(readDraft()).toEqual(draft);
   });
 
   test("clearDraft does not throw when storage is blocked", () => {

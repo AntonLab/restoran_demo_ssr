@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 import {
   type BookingDraft,
   clearDraft,
+  readDraft,
   restoreDraft,
   saveDraft,
-  takeDraft,
 } from "@/lib/booking-draft";
 import type { BookingDay } from "@/lib/booking-slots";
 import { initialDelivery, pickTime } from "@/lib/delivery-pick";
@@ -44,25 +44,30 @@ export function BookingForm({
   // Restored after hydration so the server render stays pure; sessionStorage
   // is an external system the server render cannot read. Runs once on mount:
   // the props are fixed for this page render.
+  const [ready, setReady] = useState(false);
   useEffect(() => {
-    const draft = takeDraft();
-    if (!draft) return;
-    const restored = restoreDraft(draft, days);
-    setName(restored.name ?? defaults.name);
-    setPhone(restored.phone ?? defaults.phone);
-    setGuests(restored.guests ?? "2");
-    if (restored.date !== undefined) {
-      const times = days.find((d) => d.date === restored.date)?.times ?? [];
-      setPick({ date: restored.date, time: restored.time ?? pickTime(times, "") });
+    const draft = readDraft();
+    if (draft) {
+      const restored = restoreDraft(draft, days);
+      setName(restored.name ?? defaults.name);
+      setPhone(restored.phone ?? defaults.phone);
+      setGuests(restored.guests ?? "2");
+      if (restored.date !== undefined) {
+        const times = days.find((d) => d.date === restored.date)?.times ?? [];
+        setPick({ date: restored.date, time: restored.time ?? pickTime(times, "") });
+      }
+      if (restored.preorder !== undefined && hasCart) setPreorder(restored.preorder);
     }
-    if (restored.preorder !== undefined && hasCart) setPreorder(restored.preorder);
+    setReady(true);
     // oxlint-disable-next-line react-hooks/exhaustive-deps, react/exhaustive-effect-dependencies
   }, []);
 
   // Debounced save covers every way of leaving the page. A pending submit clears the draft
-  // so a booked form is never restored; a failed submit re-saves it.
+  // so a booked form is never restored; a failed submit re-saves it. Not armed before the
+  // restore ran: strict mode's mount-cleanup-mount would otherwise save the defaults.
   const unsaved = useRef<BookingDraft | null>(null);
   useEffect(() => {
+    if (!ready) return;
     if (pending) {
       unsaved.current = null;
       clearDraft();
@@ -75,7 +80,7 @@ export function BookingForm({
       unsaved.current = null;
     }, DRAFT_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [name, phone, guests, pick, preorder, pending]);
+  }, [ready, name, phone, guests, pick, preorder, pending]);
 
   // Flush an edit still inside the debounce window on leave.
   useEffect(() => {
