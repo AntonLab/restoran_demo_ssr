@@ -2,8 +2,8 @@
 
 import { useActionState, useState } from "react";
 import { type AccountFormState, contactsAction } from "@/app/account/actions";
-import { AuthField } from "@/components/auth/auth-field";
 import { FormFooter } from "@/components/account/form-footer";
+import { AuthField } from "@/components/auth/auth-field";
 import { useFocusFirstError } from "@/components/use-focus-first-error";
 
 const idle: AccountFormState = { status: "idle" };

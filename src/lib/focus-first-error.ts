@@ -1,5 +1,5 @@
 const FOCUSABLE =
-  '[tabindex="0"], input:not([type="hidden"]), button:not([tabindex="-1"]), select, textarea';
+  '[tabindex="0"], input:not([type="hidden"]):not(:disabled), button:not([tabindex="-1"]):not(:disabled), select:not(:disabled), textarea:not(:disabled)';
 
 // A group such as role="radiogroup" carries aria-invalid but is not focusable itself.
 export function focusFirstInvalid(form: ParentNode | null) {

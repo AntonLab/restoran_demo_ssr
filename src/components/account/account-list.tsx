@@ -24,8 +24,8 @@ export function AccountList({
   shown: number;
   page: number;
   pageCount: number;
-  prev?: string;
-  next?: string;
+  prev: string | null;
+  next: string | null;
   children: ReactNode;
 }) {
   return (

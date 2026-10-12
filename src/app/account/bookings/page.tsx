@@ -31,8 +31,8 @@ export default async function Page({ searchParams }: PageProps<"/account/booking
       shown={result.bookings.length}
       page={result.page}
       pageCount={result.pageCount}
-      prev={prev ?? undefined}
-      next={next ?? undefined}
+      prev={prev}
+      next={next}
     >
       <BookingsTable bookings={result.bookings} timezone={settings.timezone} />
     </AccountList>

@@ -24,6 +24,28 @@ describe("focusFirstInvalid", () => {
     expect(groupFocus).not.toHaveBeenCalled();
   });
 
+  it("skips a disabled control and focuses the next enabled one", () => {
+    // No DOM in this node-only suite: match each element by tag against the selector's alternatives.
+    type El = { tag: string; disabled: boolean; focus: () => void };
+    const matches = (selector: string, el: El) =>
+      selector.split(",").some((alt) => {
+        const tag = alt.trim().match(/^[a-z]+/)?.[0];
+        return tag === el.tag && (!el.disabled || !alt.includes(":not(:disabled)"));
+      });
+    const disabled: El = { tag: "button", disabled: true, focus: vi.fn() };
+    const enabled: El = { tag: "button", disabled: false, focus: vi.fn() };
+    const group = {
+      matches: () => false,
+      querySelector: (selector: string) => [disabled, enabled].find((el) => matches(selector, el)),
+    };
+    const root = {
+      querySelector: (selector: string) => (selector === '[aria-invalid="true"]' ? group : null),
+    } as unknown as ParentNode;
+    focusFirstInvalid(root);
+    expect(disabled.focus).not.toHaveBeenCalled();
+    expect(enabled.focus).toHaveBeenCalledOnce();
+  });
+
   it("does nothing without a form or an invalid field", () => {
     expect(() => focusFirstInvalid(null)).not.toThrow();
     expect(() => focusFirstInvalid(asRoot(() => null))).not.toThrow();

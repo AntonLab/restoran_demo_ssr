@@ -87,10 +87,9 @@ describe("for a user", () => {
   });
   test("passwordAction sets the password and keeps only the current Session", async () => {
     const user = await mkUser();
-    const keep = await createSessionRecord(String(user._id));
     await createSessionRecord(String(user._id));
-    const keepId = String((await Session.find().lean())[0]._id);
-    void keep;
+    await createSessionRecord(String(user._id));
+    const keepId = String((await Session.find().sort({ _id: 1 }).lean())[0]._id);
     as("user", String(user._id), keepId);
     expect(await forms.password()).toEqual({ status: "success", message: "Password changed." });
     expect(

@@ -40,8 +40,8 @@ export default async function Page({ searchParams }: PageProps<"/account/orders"
       shown={result.orders.length}
       page={result.page}
       pageCount={result.pageCount}
-      prev={prev ?? undefined}
-      next={next ?? undefined}
+      prev={prev}
+      next={next}
     >
       <OrdersTable orders={result.orders} timezone={settings.timezone} />
     </AccountList>
