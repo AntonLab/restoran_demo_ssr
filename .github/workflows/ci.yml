@@ -16,8 +16,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# The job ids double as required status checks once a ruleset protects dev and
-# main; renaming one leaves the ruleset waiting for a check that never reports.
+# The job ids double as the required status checks in the ruleset on dev and
+# main — renaming one silently leaves the ruleset waiting for a check that never
+# reports.
 jobs:
   lint:
     runs-on: ubuntu-latest
