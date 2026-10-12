@@ -32,7 +32,9 @@ Ported from `books_demo_spa`; the same rules hold unless noted.
   `find` over a drive root, and, outside a subagent, a package-wide
   `npm run typecheck|lint|format:check` or `npm test`; a focused
   `npm test -- <path>` passes. Quoted text and heredoc bodies are data, except
-  a quoted redirect target and a body a shell or interpreter runs.
+  a quoted redirect target and a body a shell or interpreter runs. It also
+  refuses a `git push` whose destination is `dev` or `main`: a named refspec,
+  `HEAD`, `--all`/`--mirror`, or no refspec while on either branch.
 - **`after-pr.mjs`** reminds the main session after `gh pr create` to `/clear`
   before the next spec and to close the PR's issues by hand (a PR into `dev`
   ignores closing keywords).
