@@ -242,7 +242,7 @@ export async function getBookingConfirmation(
   };
 }
 
-// The userId: null filter keeps other Users' Bookings safe; a malformed phone or cid must never match every Guest Booking.
+// Same guard as orders.ts: userId: null, and a malformed phone or cid must not match every Guest Booking.
 export async function attachGuestBookings(
   userId: string,
   phone: string,
