@@ -26,14 +26,21 @@ export async function afterSignIn(userId: string, role: "user" | "admin"): Promi
   }
 }
 
+// afterSignIn deletes the cookie, so the cid is read first.
 export async function afterRegister(userId: string, phone: string): Promise<void> {
+  let cid: string | undefined;
   try {
-    await attachGuestOrders(userId, phone);
+    cid = (await cookies()).get(CART_COOKIE)?.value;
+  } catch {
+    console.error("Guest cookie read failed");
+  }
+  try {
+    await attachGuestOrders(userId, phone, cid);
   } catch {
     console.error("Guest Order attach failed");
   }
   try {
-    await attachGuestBookings(userId, phone);
+    await attachGuestBookings(userId, phone, cid);
   } catch {
     console.error("Guest Booking attach failed");
   }

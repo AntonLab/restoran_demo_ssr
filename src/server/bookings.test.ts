@@ -176,6 +176,12 @@ describe("loadUserBookingsPage", () => {
   });
 });
 
+test("a Guest Booking stores the browser's cid", async () => {
+  await place();
+  const saved = await Booking.findOne({ number: 1 }).select("+guestCid").lean();
+  expect(saved?.guestCid).toBe("3f2b8c1e-9d4a-4e6b-8a1c-0d5e7f9a2b34");
+});
+
 describe("placeBooking with Pre-order", () => {
   const pre = { preorder: "on", expectedTotalCents: "1000" };
   test("snapshots the Cart lines, stores the total and empties the Cart", async () => {

@@ -91,6 +91,24 @@ describe("placeOrder", () => {
     expect(order.deliveryAt).toEqual(new Date("2026-10-12T11:15:00Z"));
     expect(await Cart.findOne({ ownerKey: ctx.ownerKey! })).toBeNull();
   });
+  test("a Guest Order stores the browser's cid; a User Order does not", async () => {
+    const d = await mkDish();
+    const ctx = guest("3f2b8c1e-9d4a-4e6b-8a1c-0d5e7f9a2b34");
+    await cartWith(ctx, d);
+    await place(form(), ctx);
+    const userId = uid();
+    const userCtx: OrderContext = {
+      ownerKey: userCartKey(userId),
+      userId,
+      role: "user",
+      ip: "1.1.1.1",
+    };
+    await cartWith(userCtx, d);
+    await place(form(), userCtx);
+    const [g, u] = await Order.find().sort({ number: 1 }).select("+guestCid").lean();
+    expect(g?.guestCid).toBe("3f2b8c1e-9d4a-4e6b-8a1c-0d5e7f9a2b34");
+    expect(u?.guestCid).toBeNull();
+  });
   test("the snapshot survives a later price change and Numbers grow", async () => {
     const d = await mkDish();
     await cartWith(guest("a"), d);

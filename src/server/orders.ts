@@ -4,6 +4,7 @@ import { deliveryInstant, isValidDeliveryTime } from "@/lib/delivery-time";
 import { checkoutSchema, ORDERS_PAGE_SIZE, type OrderFilters } from "@/lib/order-schemas";
 import { canUserCancel, ORDER_STATUSES, type OrderStatus } from "@/lib/order-status";
 import { type AccountFailure, fieldFailure, guard } from "@/server/accounts";
+import { parseCid } from "@/server/auth/shopper";
 import { checkCart } from "@/server/cart";
 import { nextNumber } from "@/server/counter";
 import { connectDb } from "@/server/db";
@@ -23,6 +24,10 @@ export type OrderContext = {
   role: "guest" | "user" | "admin";
   ip: string;
 };
+
+// A Guest's ownerKey is guest:<cid>; Users and Guests without a Cart have none.
+export const guestCidOf = (ctx: OrderContext): string | null =>
+  ctx.role === "guest" && ctx.ownerKey?.startsWith("guest:") ? ctx.ownerKey.slice(6) : null;
 
 export type PlaceOrderResult =
   | { ok: true; number: number; totalCents: number; token: string }
@@ -54,6 +59,7 @@ export async function placeOrder(
     number,
     viewToken: token,
     userId: ctx.userId,
+    guestCid: guestCidOf(ctx),
     customer: { name: data.name, phone: data.phone },
     address: data.address,
     deliveryAt: deliveryInstant(data.deliveryDate, data.deliveryTime, timezone),
@@ -186,14 +192,19 @@ export async function getOrderConfirmation(
   return { number: order.number, totalCents: order.totalCents, mine: userId !== null };
 }
 
-// The userId: null filter keeps other Users' Orders safe; a malformed phone must never match every Guest Order.
-export async function attachGuestOrders(userId: string, phone: string): Promise<number> {
+// The userId: null filter keeps other Users' Orders safe; a malformed phone or cid must never match every Guest Order.
+export async function attachGuestOrders(
+  userId: string,
+  phone: string,
+  rawCid: string | null | undefined,
+): Promise<number> {
   await connectDb();
   const id = parseObjectId(userId);
   const parsed = phoneField.safeParse(phone);
-  if (!id || !parsed.success) return 0;
+  const cid = parseCid(rawCid);
+  if (!id || !parsed.success || !cid) return 0;
   const result = await Order.updateMany(
-    { userId: null, "customer.phone": parsed.data },
+    { userId: null, "customer.phone": parsed.data, guestCid: cid },
     { $set: { userId: id } },
   );
   return result.modifiedCount;

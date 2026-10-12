@@ -17,6 +17,8 @@ const bookingSchema = new Schema(
     // Guests have no session, so this token is what lets them open their confirmation.
     viewToken: { type: String, required: true, select: false },
     userId: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    // The placing browser's cid: a Guest Booking attaches only to a User registering from it.
+    guestCid: { type: String, default: null, select: false },
     contact: {
       name: { type: String, required: true },
       phone: { type: String, required: true },

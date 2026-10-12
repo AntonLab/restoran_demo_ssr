@@ -18,13 +18,14 @@ import {
 import { type BookingTableRow, withCancellable } from "@/lib/booking-view";
 import { deliveryInstant, MS_PER_DAY, MS_PER_MINUTE } from "@/lib/delivery-time";
 import { type AccountFailure, fieldFailure, guard } from "@/server/accounts";
+import { parseCid } from "@/server/auth/shopper";
 import { type CartView, checkCart } from "@/server/cart";
 import { nextNumber } from "@/server/counter";
 import { connectDb } from "@/server/db";
 import { createMutex } from "@/server/mutex";
 import { Booking, type BookingDoc } from "@/server/models/booking";
 import { Cart } from "@/server/models/cart";
-import type { OrderContext } from "@/server/orders";
+import { guestCidOf, type OrderContext } from "@/server/orders";
 import { parseObjectId } from "@/server/queries/menu";
 import { getSettings } from "@/server/queries/settings";
 import { createRateLimiter, type Limiter } from "@/server/rate-limit";
@@ -93,6 +94,7 @@ export async function placeBooking(
       number,
       viewToken: token,
       userId: ctx.userId,
+      guestCid: guestCidOf(ctx),
       contact: { name: data.name, phone: data.phone },
       startsAt: deliveryInstant(data.date, data.time, timezone),
       guests: data.guests,
@@ -240,14 +242,19 @@ export async function getBookingConfirmation(
   };
 }
 
-// The userId: null filter keeps other Users' Bookings safe; a malformed phone must never match every Guest Booking.
-export async function attachGuestBookings(userId: string, phone: string): Promise<number> {
+// The userId: null filter keeps other Users' Bookings safe; a malformed phone or cid must never match every Guest Booking.
+export async function attachGuestBookings(
+  userId: string,
+  phone: string,
+  rawCid: string | null | undefined,
+): Promise<number> {
   await connectDb();
   const id = parseObjectId(userId);
   const parsed = phoneField.safeParse(phone);
-  if (!id || !parsed.success) return 0;
+  const cid = parseCid(rawCid);
+  if (!id || !parsed.success || !cid) return 0;
   const result = await Booking.updateMany(
-    { userId: null, "contact.phone": parsed.data },
+    { userId: null, "contact.phone": parsed.data, guestCid: cid },
     { $set: { userId: id } },
   );
   return result.modifiedCount;

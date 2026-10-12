@@ -99,7 +99,7 @@ A delivery request: Customer contacts, address, delivery time, Order items and
 total. The total is the sum of the items: no minimum and no delivery fee. Paid
 in cash on delivery. A Guest sees the Order's Number once, on the confirmation
 page; the Admin finds a Guest's Orders by name and phone. They attach to a
-User who registers with the same phone.
+User who registers with the same phone in the same browser.
 _Avoid_: Purchase, checkout (that is the step, not the record)
 
 **Price snapshot**:
@@ -124,7 +124,8 @@ now plus 1 hour.
 A table reservation: contact, start time, 1 to 12 guests and an optional
 Pre-order. Lasts 2 hours, starts on a Slot, and is refused when the
 Concurrent booking limit is reached. A Guest or User may book; the Admin may
-not. A Guest's Bookings attach to a User who registers with the same phone.
+not. A Guest's Bookings attach to a User who registers with the same phone in
+the same browser.
 Later changes to the Schedule or the limit never touch existing Bookings.
 There is no table entity.
 _Avoid_: Reservation (in code), table order
