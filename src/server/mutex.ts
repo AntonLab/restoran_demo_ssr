@@ -1,4 +1,4 @@
-// One Node process, so an in-memory lock is enough; same limit as the SSE emitter.
+// One Node process, so an in-memory lock is enough.
 // tail never rejects, so a failed task does not stall the queue behind it.
 export function createMutex() {
   let tail: Promise<unknown> = Promise.resolve();

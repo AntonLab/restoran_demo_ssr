@@ -6,8 +6,6 @@ import { Category } from "@/server/models/category";
 import { Dish } from "@/server/models/dish";
 import { activeCategoryIds, parseObjectId } from "@/server/queries/menu";
 
-export { MAX_LINES, MAX_QTY };
-
 export const userCartKey = (userId: string) => `user:${userId}`;
 export const guestCartKey = (cid: string) => `guest:${cid}`;
 

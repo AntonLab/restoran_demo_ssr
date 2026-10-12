@@ -2,7 +2,7 @@
 
 import { Star } from "lucide-react";
 import type { KeyboardEvent } from "react";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { starForKey } from "@/lib/ratings";
 
 const STARS = [1, 2, 3, 4, 5];

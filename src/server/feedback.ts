@@ -11,8 +11,8 @@ export type FieldErrors = Record<string, string[]>;
 type Failure = { ok: false; error: string; fieldErrors?: FieldErrors };
 
 const limiterOptions = { limit: 5, windowMs: 3_600_000 };
-export const reviewLimiter = createRateLimiter(limiterOptions);
-export const complaintLimiter = createRateLimiter(limiterOptions);
+const reviewLimiter = createRateLimiter(limiterOptions);
+const complaintLimiter = createRateLimiter(limiterOptions);
 
 function isHoneypotFilled(input: unknown): boolean {
   if (typeof input !== "object" || input === null) return false;

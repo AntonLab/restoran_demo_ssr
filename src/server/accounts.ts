@@ -8,8 +8,8 @@ import { createRateLimiter, formatRetry, type Limiter } from "@/server/rate-limi
 
 export type AccountFailure = { ok: false; error: string; fieldErrors?: FieldErrors };
 
-export const registerLimiter = createRateLimiter({ limit: 5, windowMs: 3_600_000 });
-export const loginLimiter = createRateLimiter({ limit: 10, windowMs: 900_000 });
+const registerLimiter = createRateLimiter({ limit: 5, windowMs: 3_600_000 });
+const loginLimiter = createRateLimiter({ limit: 10, windowMs: 900_000 });
 
 const INVALID_CREDENTIALS = "Invalid email or password";
 

@@ -11,9 +11,9 @@ English, money is USD stored as integer cents.
   `AGENTS.md`).
 - Tailwind 4, shadcn/ui on `@base-ui/react` (not Radix).
 - MongoDB + Mongoose; zod; Server Actions for mutations, Route Handlers for
-  SSE and image delivery; dnd-kit; sharp; Vitest + mongodb-memory-server.
+  image delivery; sharp; Vitest + mongodb-memory-server.
 - Own auth: cookie sessions, bcrypt, session tokens stored as SHA-256.
-- Runs locally on one Node process (in-memory SSE emitter, `uploads/` on disk).
+- Runs locally on one Node process (`uploads/` on disk).
 
 ## Quality Gates
 

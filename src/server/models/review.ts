@@ -1,6 +1,6 @@
 import mongoose, { Schema, type InferSchemaType, type Model } from "mongoose";
 
-export const REVIEW_STATUSES = ["pending", "approved", "rejected"] as const;
+const REVIEW_STATUSES = ["pending", "approved", "rejected"] as const;
 
 const rating = { type: Number, required: true, min: 1, max: 5, validate: Number.isInteger };
 

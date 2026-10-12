@@ -42,7 +42,3 @@ export async function ensureShopper(): Promise<
   (await cookies()).set(CART_COOKIE, cid, cartCookieOptions(process.env.NODE_ENV === "production"));
   return { ...shopper, ownerKey: guestCartKey(cid) };
 }
-
-export async function clearCartCookie(): Promise<void> {
-  (await cookies()).delete(CART_COOKIE);
-}

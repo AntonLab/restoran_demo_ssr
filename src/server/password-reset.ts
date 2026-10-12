@@ -10,7 +10,7 @@ import { PasswordResetToken } from "@/server/models/password-reset-token";
 import { User } from "@/server/models/user";
 import { createRateLimiter, type Limiter } from "@/server/rate-limit";
 
-export const resetRequestLimiter = createRateLimiter({ limit: 5, windowMs: 3_600_000 });
+const resetRequestLimiter = createRateLimiter({ limit: 5, windowMs: 3_600_000 });
 
 const RESET_TTL_MS = 3_600_000;
 const INVALID_LINK: AccountFailure = { ok: false, error: "This link is invalid or expired." };

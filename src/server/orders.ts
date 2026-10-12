@@ -15,7 +15,7 @@ import { getSettings } from "@/server/queries/settings";
 import { createRateLimiter, type Limiter } from "@/server/rate-limit";
 import { canView } from "@/server/view-token";
 
-export const orderLimiter = createRateLimiter({ limit: 10, windowMs: 3_600_000 });
+const orderLimiter = createRateLimiter({ limit: 10, windowMs: 3_600_000 });
 
 export type OrderContext = {
   ownerKey: string | null;

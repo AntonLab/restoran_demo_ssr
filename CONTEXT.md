@@ -183,11 +183,11 @@ _Avoid_: id (that is the Mongo `_id`)
 
 **New indicator**:
 The icon on an admin tab showing that Orders, Bookings, Complaints or Reviews
-in status new (or pending) exist. Kept live over SSE; the count of documents
-in that status is the source of truth.
+in status new (or pending) exist. The count of documents in that status is the
+source of truth.
 
 **Mail emulator**:
-The `log` mail delivery: each email is printed to the server log as
+The mail layer: each email is printed to the server log as
 `Mail to {to}: {subject}` with its text. Password reset links are copied from
 there.
 
