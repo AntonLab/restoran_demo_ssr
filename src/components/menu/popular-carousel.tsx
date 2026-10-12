@@ -11,8 +11,9 @@ export function PopularCarousel({ dishes, viewer }: { dishes: DishCardData[]; vi
   const scroller = useRef<HTMLElement>(null);
   const scroll = (dir: 1 | -1) => {
     const el = scroller.current;
+    if (!el) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (el) el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: reduce ? "auto" : "smooth" });
+    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: reduce ? "auto" : "smooth" });
   };
 
   return (

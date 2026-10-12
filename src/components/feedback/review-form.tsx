@@ -1,11 +1,11 @@
 "use client";
 
-import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { useActionState, useState } from "react";
 import { reviewAction, type ReviewFormState } from "@/app/feedback/actions";
-import { ContactInput, CountedTextarea, FieldError } from "@/components/feedback/field";
+import { ContactInput, CountedTextarea } from "@/components/feedback/field";
 import { Honeypot } from "@/components/feedback/honeypot";
 import { StarInput } from "@/components/feedback/star-input";
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { Button } from "@/components/ui/button";
 
 const idle: ReviewFormState = { status: "idle" };
@@ -27,13 +27,23 @@ export function ReviewForm() {
     <form ref={formRef} action={action} className="relative flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <span className="text-sm font-medium">Dishes</span>
-        <StarInput name="dishesRating" label="Dishes" value={dishes} onChange={setDishes} />
-        <FieldError message={errors.dishesRating?.[0]} />
+        <StarInput
+          name="dishesRating"
+          label="Dishes"
+          value={dishes}
+          onChange={setDishes}
+          error={errors.dishesRating?.[0]}
+        />
       </div>
       <div className="flex flex-col gap-1">
         <span className="text-sm font-medium">Service</span>
-        <StarInput name="serviceRating" label="Service" value={service} onChange={setService} />
-        <FieldError message={errors.serviceRating?.[0]} />
+        <StarInput
+          name="serviceRating"
+          label="Service"
+          value={service}
+          onChange={setService}
+          error={errors.serviceRating?.[0]}
+        />
       </div>
       <CountedTextarea
         id="review-text"

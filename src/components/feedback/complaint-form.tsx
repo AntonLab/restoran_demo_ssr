@@ -1,10 +1,10 @@
 "use client";
 
-import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { useActionState, useState } from "react";
 import { complaintAction, type ComplaintFormState } from "@/app/feedback/actions";
 import { ContactInput, CountedTextarea } from "@/components/feedback/field";
 import { Honeypot } from "@/components/feedback/honeypot";
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { Button } from "@/components/ui/button";
 
 const idle: ComplaintFormState = { status: "idle" };

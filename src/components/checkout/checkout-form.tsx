@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { useActionState, useState } from "react";
 import { checkoutAction, type CheckoutFormState } from "@/app/checkout/actions";
 import { AuthField } from "@/components/auth/auth-field";
@@ -9,6 +8,7 @@ import { DeliveryFields } from "@/components/checkout/delivery-fields";
 import { SaveTemplateOption, TemplatePicker } from "@/components/checkout/template-fields";
 import { saveOffer, type TemplateView } from "@/lib/template-offer";
 import { ContactInput } from "@/components/feedback/field";
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
 import type { DeliveryDay } from "@/lib/delivery-time";

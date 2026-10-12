@@ -1,9 +1,9 @@
 "use client";
 
-import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { useActionState, useState } from "react";
 import { type AuthFormState, resetPasswordAction } from "@/app/(auth)/actions";
 import { AuthField } from "@/components/auth/auth-field";
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { Button } from "@/components/ui/button";
 
 const idle: AuthFormState = { status: "idle" };

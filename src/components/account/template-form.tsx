@@ -1,10 +1,10 @@
 "use client";
 
-import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { useActionState, useEffect, useState } from "react";
 import { templateAction } from "@/app/account/templates/actions";
 import type { AccountFormState } from "@/app/account/form-state";
 import { ContactInput } from "@/components/feedback/field";
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { Button } from "@/components/ui/button";
 import type { TemplateView } from "@/lib/template-offer";
 

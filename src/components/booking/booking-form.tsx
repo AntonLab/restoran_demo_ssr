@@ -1,11 +1,11 @@
 "use client";
 
-import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { bookingAction, type BookingFormState } from "@/app/booking/actions";
 import { AuthField } from "@/components/auth/auth-field";
 import { PreorderFields } from "@/components/booking/preorder-fields";
 import { SlotFields } from "@/components/booking/slot-fields";
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { Button } from "@/components/ui/button";
 import {
   type BookingDraft,

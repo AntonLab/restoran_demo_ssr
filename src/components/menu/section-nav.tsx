@@ -7,7 +7,9 @@ import { cn } from "@/lib/utils";
 const OFFSET = 140;
 
 export function SectionNav({ sections }: { sections: { key: string; title: string }[] }) {
-  const [active, setActive] = useState<string | undefined>(sections[0]?.key);
+  const [picked, setActive] = useState<string | undefined>(sections[0]?.key);
+  // `sections` can change under a kept `picked`; fall back to the first one.
+  const active = sections.some((s) => s.key === picked) ? picked : sections[0]?.key;
 
   useEffect(() => {
     let observer: IntersectionObserver | undefined;
