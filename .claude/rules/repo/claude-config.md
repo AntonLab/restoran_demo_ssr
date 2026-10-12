@@ -58,6 +58,11 @@ Ported from `books_demo_spa`; the same rules hold unless noted.
   `shell: true`: Claude Code spawns without a shell, and a bare `npx` fails on
   Windows (it is `npx.cmd`).
 - **Plugins are project dependencies.** `enabledPlugins` makes Claude Code
-  offer superpowers, mattpocock-skills, code-review, ponytail and caveman on
-  a fresh clone. The agents preload `caveman`, `tdd`, `ponytail` and
+  offer superpowers, mattpocock-skills, code-review, ponytail, caveman and swarm
+  on a fresh clone. The agents preload `caveman`, `tdd`, `ponytail` and
   `domain-modeling`; a missing skill preloads nothing, silently.
+- **`swarm` comes from `AntonLab/custom-agents-swarm`**, a private
+  marketplace, so installing it needs git credentials for that repo. It ships
+  `/swarm:ship` (gates, PR into `dev`, CI, optional merge and cleanup) and
+  `swarm:`-prefixed copies of the agents; the local `.claude/agents/` copies
+  stay until the plugin's versions replace them.
