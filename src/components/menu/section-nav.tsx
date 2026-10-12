@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { sectionAnchor } from "@/lib/menu-view";
+import { pickActive, sectionAnchor } from "@/lib/menu-view";
 import { cn } from "@/lib/utils";
 
 const OFFSET = 140;
@@ -21,10 +21,25 @@ export function SectionNav({ sections }: { sections: { key: string; title: strin
       const byId = new Map(sections.map(({ key }) => [sectionAnchor(key), key]));
       observer = new IntersectionObserver(
         (entries) => {
+          let crossed = false;
           for (const e of entries) {
             const key = byId.get(e.target.id);
-            if (e.isIntersecting && key) setActive(key);
+            if (e.isIntersecting && key) {
+              crossed = true;
+              setActive(key);
+            }
           }
+          // A jump (scrollTo, long wheel) can skip the 1px band; recompute from positions.
+          if (crossed) return;
+          const found = [...byId].flatMap(([id, key]) => {
+            const el = document.getElementById(id);
+            return el ? [{ key, top: el.getBoundingClientRect().top }] : [];
+          });
+          const i = pickActive(
+            found.map((f) => f.top),
+            OFFSET,
+          );
+          if (found[i]) setActive(found[i].key);
         },
         { rootMargin: `-${OFFSET}px 0px -${bottomInset}px 0px` },
       );
