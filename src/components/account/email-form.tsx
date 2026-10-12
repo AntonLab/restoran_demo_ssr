@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { type AccountFormState, emailAction } from "@/app/account/actions";
 import { AuthField } from "@/components/auth/auth-field";
-import { Button } from "@/components/ui/button";
+import { FormFooter } from "@/components/account/form-footer";
 
 const idle: AccountFormState = { status: "idle" };
 
@@ -44,15 +44,7 @@ export function EmailForm({ email: initialEmail }: { email: string }) {
         onChange={setPassword}
         error={errors.currentPassword?.[0]}
       />
-      {state.status === "error" && (
-        <p role="alert" className="text-sm text-destructive">
-          {state.error}
-        </p>
-      )}
-      {state.status === "success" && <output className="block text-sm">{state.message}</output>}
-      <Button type="submit" disabled={pending} className="self-start">
-        {pending ? "Saving…" : "Change email"}
-      </Button>
+      <FormFooter state={state} pending={pending} label="Change email" />
     </form>
   );
 }

@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { type AccountFormState, contactsAction } from "@/app/account/actions";
 import { AuthField } from "@/components/auth/auth-field";
-import { Button } from "@/components/ui/button";
+import { FormFooter } from "@/components/account/form-footer";
 
 const idle: AccountFormState = { status: "idle" };
 
@@ -41,15 +41,7 @@ export function ContactsForm({
         onChange={setPhone}
         error={errors.phone?.[0]}
       />
-      {state.status === "error" && (
-        <p role="alert" className="text-sm text-destructive">
-          {state.error}
-        </p>
-      )}
-      {state.status === "success" && <output className="block text-sm">{state.message}</output>}
-      <Button type="submit" disabled={pending} className="self-start">
-        {pending ? "Saving…" : "Save details"}
-      </Button>
+      <FormFooter state={state} pending={pending} label="Save details" />
     </form>
   );
 }
