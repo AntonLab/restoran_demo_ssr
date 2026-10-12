@@ -1,7 +1,6 @@
 ---
 paths:
   - ".claude/settings.json"
-  - ".claude/hooks/**"
   - ".claude/skills/db-reset/**"
   - ".mcp.json"
   - ".gitignore"
@@ -20,24 +19,14 @@ Ported from `books_demo_spa`; the same rules hold unless noted.
   holds beside `Bash(npm run *)`.
 - **Ask rules list both shells.** On Windows Claude runs commands through
   `PowerShell` as well as `Bash`; a `Bash(...)` rule alone misses the other.
-- **`format-edited.mjs`** (PostToolUse on Edit/Write) runs oxfmt from the
-  nearest directory holding `.oxfmtrc.json`, because oxfmt reads `.gitignore`
-  only from its working directory: from the main checkout,
-  `/.claude/worktrees/` would hide every worktree file. oxfmt's `exports`
-  hides `bin/`, so the hook builds the path. oxlint is left to the pre-commit
-  hook.
-- **`guard-shell.mjs`** (PreToolUse on Bash and PowerShell) refuses `sed -i`,
-  shell redirects, `tee`, `cp` and `mv` (not `git mv`) into anything but a
-  temp or scratchpad path, scripts calling `writeFileSync`/`open(…, 'w')`,
-  `find` over a drive root, and, outside a subagent, a package-wide
-  `npm run typecheck|lint|format:check` or `npm test`; a focused
-  `npm test -- <path>` passes. Quoted text and heredoc bodies are data, except
-  a quoted redirect target and a body a shell or interpreter runs. It also
-  refuses a `git push` whose destination is `dev` or `main`: a named refspec,
-  `HEAD`, `--all`/`--mirror`, or no refspec while on either branch.
-- **`after-pr.mjs`** reminds the main session after `gh pr create` to `/clear`
-  before the next spec and to close the PR's issues by hand (a PR into `dev`
-  ignores closing keywords).
+- **Tool hooks come from the `swarm` plugin**, whose README lists what each
+  one does: `guard-shell` refuses shell writes into repo files, `sed -i`,
+  pushes to `dev` or `main`, and package-wide gates in the main session (a
+  focused `npm test -- <path>` passes); `format-edited` runs oxfmt from the
+  nearest folder holding `.oxfmtrc.json`, since oxfmt reads `.gitignore` only
+  from its working directory; `after-pr` reminds the main session to `/clear`
+  after `gh pr create`. Change them in `AntonLab/custom-agents-swarm`, not
+  here. oxlint is left to the pre-commit hook.
 - **SessionStart runs `branch-check.mjs --warn`**: one line when the branch is
   behind `origin/dev`, nothing otherwise; a failed fetch exits 0. It also
   runs `preflight.mjs`: one line per gap (Node major other than `.nvmrc`, no
@@ -50,10 +39,9 @@ Ported from `books_demo_spa`; the same rules hold unless noted.
   `npx skills add <source> --skill <name> -y`. A skill a plugin already ships
   stays out of the lock. `.claude/skills/db-reset/` is the one checked-in
   skill, and it is the user's command (`disable-model-invocation`).
-- **`.claude/agents/`** is git-ignored: subagent definitions are per clone.
-  Without them the pipeline falls back to the skills' own templates. Each
-  body carries a `<!-- Revised: YYYY-MM-DD … -->` line; bump it with every
-  change.
+- **`.claude/agents/`** stays ignored and empty: the pipeline agents come
+  from the `swarm` plugin as `swarm:<name>`. Copies left there from before
+  the plugin are stale; delete them.
 - **`.mcp.json`** starts Playwright through `node -e` spawning `npx` with
   `shell: true`: Claude Code spawns without a shell, and a bare `npx` fails on
   Windows (it is `npx.cmd`).
@@ -63,6 +51,6 @@ Ported from `books_demo_spa`; the same rules hold unless noted.
   `domain-modeling`; a missing skill preloads nothing, silently.
 - **`swarm` comes from `AntonLab/custom-agents-swarm`**, a private
   marketplace, so installing it needs git credentials for that repo. It ships
-  `/swarm:ship` (gates, PR into `dev`, CI, optional merge and cleanup) and
-  `swarm:`-prefixed copies of the agents; the local `.claude/agents/` copies
-  stay until the plugin's versions replace them.
+  the pipeline agents (`swarm:code-mapper` and the rest), `/swarm:ship`,
+  `/swarm:queue` and the tool hooks. Run `/plugin marketplace update` after
+  a change there lands.
