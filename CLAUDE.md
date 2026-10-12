@@ -48,7 +48,8 @@ English, money is USD stored as integer cents.
   lock change (`.claude/rules/repo/claude-config.md`).
 - **Plugins**: `.claude/settings.json` enables superpowers, mattpocock-skills,
   code-review, ponytail, caveman and swarm.
-- **Context-saving agents** (`.claude/agents/`, git-ignored, per clone):
+- **Context-saving agents** come from the `swarm` plugin; dispatch every
+  agent as `swarm:<name>` (`swarm:code-mapper`):
   `repo-auditor` for any "check / audit / find all" request (each finding
   the user declines gets a line in `docs/agents/rejected-findings.md`, with
   the reason, so later audits skip it); `gate-runner`
