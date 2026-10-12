@@ -73,6 +73,18 @@ describe("addFavorite / removeFavorite", () => {
     });
     expect(await removeFavorite(uid(), dish)).toMatchObject({ favoritesCount: 1 });
   });
+  test("a seeded base survives toggles: add gives N+1, remove gives N", async () => {
+    const dish = await mkDish({ favoritesBase: 41, favoritesCount: 41 });
+    const user = uid();
+    expect(await addFavorite(user, dish)).toMatchObject({ favoritesCount: 42 });
+    expect(await removeFavorite(user, dish)).toMatchObject({ favoritesCount: 41 });
+    expect(await count(dish)).toBe(41);
+  });
+  test("a stale count heals to base + marks", async () => {
+    const dish = await mkDish({ favoritesBase: 10, favoritesCount: 99 });
+    expect(await addFavorite(uid(), dish)).toMatchObject({ favoritesCount: 11 });
+    expect(await count(dish)).toBe(11);
+  });
   test("a stale count heals on the next add", async () => {
     const dish = await mkDish({ favoritesCount: 40 });
     expect(await addFavorite(uid(), dish)).toMatchObject({ favoritesCount: 1 });

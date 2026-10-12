@@ -27,11 +27,17 @@ async function visibleDish(rawId: string): Promise<string | null> {
 }
 
 // Counting the marks instead of $inc: a crash between the mark and the counter cannot drift it,
-// and the next toggle heals a stale value.
+// and the next toggle heals a stale value. The Seed baseline is added on top of the marks.
 async function syncCount(dishId: string): Promise<number> {
-  const favoritesCount = await Favorite.countDocuments({ dishId });
-  await Dish.updateOne({ _id: dishId }, { favoritesCount });
-  return favoritesCount;
+  const marks = await Favorite.countDocuments({ dishId });
+  const dish = await Dish.findOneAndUpdate(
+    { _id: dishId },
+    [{ $set: { favoritesCount: { $add: ["$favoritesBase", marks] } } }],
+    { returnDocument: "after", updatePipeline: true },
+  )
+    .select("favoritesCount")
+    .lean();
+  return dish?.favoritesCount ?? marks;
 }
 
 export async function addFavorite(userId: string, rawDishId: string): Promise<FavoriteResult> {

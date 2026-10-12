@@ -14,6 +14,8 @@ const dishSchema = new Schema(
     status: { type: String, enum: ["active", "inactive"], default: "active" },
     order: { type: Number, default: 0, validate: Number.isInteger },
     favoritesCount: { type: Number, default: 0, min: 0, validate: Number.isInteger },
+    // Demo baseline from the Seed; real Favorite marks are added on top of it.
+    favoritesBase: { type: Number, default: 0, min: 0, validate: Number.isInteger },
     image: {
       small: String,
       medium: String,

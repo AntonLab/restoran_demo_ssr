@@ -28,7 +28,7 @@ export default async function RootLayout({ children, modal }: LayoutProps<"/">) 
         <Header
           siteName={settings.name}
           auth={
-            // Same width as the signed-out links, so the header does not jump when they stream in.
+            // Reserves roughly the space of the links, to limit the header jump when they stream in.
             <Suspense fallback={<span className="h-9 w-48" aria-hidden="true" />}>
               <HeaderAuth />
             </Suspense>

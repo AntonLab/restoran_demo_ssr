@@ -83,6 +83,7 @@ export async function runSeed(opts: SeedOptions): Promise<{
         isChefChoice: seed.isChefChoice ?? false,
         inStock: seed.inStock ?? true,
         favoritesCount: seed.favoritesCount,
+        favoritesBase: seed.favoritesCount,
         order: position,
         image,
       });
