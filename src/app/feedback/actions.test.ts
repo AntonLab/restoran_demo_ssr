@@ -3,6 +3,8 @@ import { complaintAction, loadMoreReviews, reviewAction } from "@/app/feedback/a
 import { Complaint } from "@/server/models/complaint";
 import { Review } from "@/server/models/review";
 import { clearTestDb, startTestDb, stopTestDb } from "@/server/test/db";
+import { untilRefused } from "@/server/test/fixtures";
+import { formOf } from "@/server/test/form";
 
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
 
@@ -11,11 +13,6 @@ afterAll(stopTestDb);
 beforeEach(clearTestDb);
 
 const IDLE = { status: "idle" } as const;
-const fd = (obj: Record<string, string>) => {
-  const f = new FormData();
-  for (const [k, v] of Object.entries(obj)) f.set(k, v);
-  return f;
-};
 const seed = async (n: number) =>
   Review.insertMany(
     Array.from({ length: n }, (_, i) => ({
@@ -30,11 +27,14 @@ const review = { dishesRating: "5", serviceRating: "4", text: "Lovely" };
 
 describe("reviewAction", () => {
   test("stores a valid review as pending", async () => {
-    expect(await reviewAction(IDLE, fd(review))).toEqual({ status: "success" });
+    expect(await reviewAction(IDLE, formOf(review))).toEqual({ status: "success" });
     expect(await Review.findOne().lean()).toMatchObject({ status: "pending", text: "Lovely" });
   });
   test("zod rejects bad input with field errors and stores nothing", async () => {
-    const state = await reviewAction(IDLE, fd({ dishesRating: "9", serviceRating: "", text: " " }));
+    const state = await reviewAction(
+      IDLE,
+      formOf({ dishesRating: "9", serviceRating: "", text: " " }),
+    );
     expect(state).toMatchObject({
       status: "error",
       fieldErrors: {
@@ -46,11 +46,7 @@ describe("reviewAction", () => {
     expect(await Review.countDocuments()).toBe(0);
   });
   test("is refused once the hourly limit is spent", async () => {
-    // The limiter is per process and keyed by one "local" IP: submit until refused.
-    let state: Awaited<ReturnType<typeof reviewAction>> = IDLE;
-    for (let i = 0; i < 6 && state.status !== "error"; i++) {
-      state = await reviewAction(IDLE, fd(review));
-    }
+    const state = await untilRefused(() => reviewAction(IDLE, formOf(review)), 5);
     expect(state).toMatchObject({ status: "error", error: expect.stringContaining("Too many") });
     expect(await Review.countDocuments()).toBeLessThanOrEqual(5);
   });
@@ -58,24 +54,24 @@ describe("reviewAction", () => {
 
 describe("complaintAction", () => {
   test("stores a valid complaint and returns its number", async () => {
-    expect(await complaintAction(IDLE, fd({ text: "Cold soup", contact: "a@b.co" }))).toEqual({
+    expect(await complaintAction(IDLE, formOf({ text: "Cold soup", contact: "a@b.co" }))).toEqual({
       status: "success",
       number: 1,
     });
     expect(await Complaint.countDocuments()).toBe(1);
   });
   test("zod rejects a missing contact", async () => {
-    expect(await complaintAction(IDLE, fd({ text: "Cold soup", contact: "" }))).toMatchObject({
+    expect(await complaintAction(IDLE, formOf({ text: "Cold soup", contact: "" }))).toMatchObject({
       status: "error",
       fieldErrors: { contact: expect.any(Array) },
     });
     expect(await Complaint.countDocuments()).toBe(0);
   });
   test("is refused once the hourly limit is spent", async () => {
-    let state: Awaited<ReturnType<typeof complaintAction>> = IDLE;
-    for (let i = 0; i < 6 && state.status !== "error"; i++) {
-      state = await complaintAction(IDLE, fd({ text: "Cold soup", contact: "a@b.co" }));
-    }
+    const state = await untilRefused(
+      () => complaintAction(IDLE, formOf({ text: "Cold soup", contact: "a@b.co" })),
+      5,
+    );
     expect(state).toMatchObject({ status: "error", error: expect.stringContaining("Too many") });
   });
 });

@@ -6,6 +6,7 @@ import { ensureShopper } from "@/server/auth/shopper-cookie";
 import { guestCartKey } from "@/server/cart";
 import { Booking } from "@/server/models/booking";
 import { clearTestDb, startTestDb, stopTestDb } from "@/server/test/db";
+import { formOf } from "@/server/test/form";
 
 vi.mock("@/server/queries/settings", () => ({
   getSettings: async () => ({
@@ -36,18 +37,15 @@ beforeEach(async () => {
 afterEach(() => vi.useRealTimers());
 
 const guest = { role: "guest", userId: null, ownerKey: guestCartKey("abc") } as const;
-const fd = (patch: Record<string, string> = {}) => {
-  const form = new FormData();
-  const base = {
+const fd = (patch: Record<string, string> = {}) =>
+  formOf({
     name: "Ann",
     phone: "+1 555 123 4567",
     guests: "2",
     date: "2026-10-13",
     time: "12:00",
-  };
-  for (const [k, v] of Object.entries({ ...base, ...patch })) form.append(k, v);
-  return form;
-};
+    ...patch,
+  });
 
 describe("bookingAction", () => {
   test("a Guest Booking redirects to the confirmation and revalidates the layout", async () => {
