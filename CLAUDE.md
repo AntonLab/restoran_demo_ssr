@@ -47,7 +47,7 @@ English, money is USD stored as integer cents.
 - **Project skills**: `npm run skills` restores them after a fresh clone or a
   lock change (`.claude/rules/repo/claude-config.md`).
 - **Plugins**: `.claude/settings.json` enables superpowers, mattpocock-skills,
-  code-review, ponytail and caveman.
+  code-review, ponytail, caveman and swarm.
 - **Context-saving agents** (`.claude/agents/`, git-ignored, per clone):
   `repo-auditor` for any "check / audit / find all" request; `gate-runner`
   (haiku) for the gates and CI; `ui-checker` for pages and flows in the
