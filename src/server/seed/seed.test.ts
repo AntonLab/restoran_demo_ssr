@@ -40,7 +40,8 @@ async function expectNothingSeeded() {
   }
 }
 
-describe("runSeed", () => {
+// sharp resizes every seed image, which passes 5s when the whole suite runs in parallel.
+describe("runSeed", { timeout: 30_000 }, () => {
   test("creates Settings, 12 Categories, Dishes with images, approved Reviews and the Admin", async () => {
     await runSeed(opts());
     expect((await Settings.findOne().lean())?.name).toBe("Verde Kitchen");
