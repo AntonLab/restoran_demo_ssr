@@ -39,7 +39,9 @@ Ported from `books_demo_spa`; the same rules hold unless noted.
   before the next spec and to close the PR's issues by hand (a PR into `dev`
   ignores closing keywords).
 - **SessionStart runs `branch-check.mjs --warn`**: one line when the branch is
-  behind `origin/dev`, nothing otherwise; a failed fetch exits 0.
+  behind `origin/dev`, nothing otherwise; a failed fetch exits 0. It also
+  runs `preflight.mjs`: one line per gap (Node major other than `.nvmrc`, no
+  `.env.local`, MongoDB not answering), nothing when ready, always exit 0.
 - **`.env.local` is behind `Edit(**/.env.local)`**. `npm run worktree` copies
   it into a new worktree instead.
 - **Skills.** `skills-lock.json` pins the project skills. `npm run skills`
