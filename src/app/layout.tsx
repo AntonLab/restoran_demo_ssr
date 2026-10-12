@@ -25,6 +25,12 @@ export default async function RootLayout({ children, modal }: LayoutProps<"/">) 
   return (
     <html lang="en" className={`${montserrat.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:ring-3 focus:ring-ring/50"
+        >
+          Skip to content
+        </a>
         <Header
           siteName={settings.name}
           auth={
@@ -34,7 +40,9 @@ export default async function RootLayout({ children, modal }: LayoutProps<"/">) 
             </Suspense>
           }
         />
-        <main className="flex-1">{children}</main>
+        <main id="main" className="flex-1">
+          {children}
+        </main>
         <Footer settings={settings} />
         {modal}
       </body>

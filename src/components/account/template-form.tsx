@@ -1,5 +1,6 @@
 "use client";
 
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { useActionState, useEffect, useState } from "react";
 import { templateAction } from "@/app/account/templates/actions";
 import type { AccountFormState } from "@/app/account/form-state";
@@ -17,6 +18,7 @@ export function TemplateForm({
   onDone: () => void;
 }) {
   const [state, action, pending] = useActionState(templateAction, idle);
+  const formRef = useFocusFirstError(state);
   const [name, setName] = useState(template?.name ?? "");
   const [phone, setPhone] = useState(template?.phone ?? "");
   const [address, setAddress] = useState(template?.address ?? "");
@@ -28,7 +30,7 @@ export function TemplateForm({
   }, [state, onDone]);
 
   return (
-    <form action={action} className="flex flex-col gap-4 rounded-lg border p-4">
+    <form ref={formRef} action={action} className="flex flex-col gap-4 rounded-lg border p-4">
       {template && <input type="hidden" name="id" value={template.id} />}
       <ContactInput
         id={`template-${id}-name`}

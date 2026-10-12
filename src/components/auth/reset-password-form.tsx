@@ -1,5 +1,6 @@
 "use client";
 
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { useActionState, useState } from "react";
 import { type AuthFormState, resetPasswordAction } from "@/app/(auth)/actions";
 import { AuthField } from "@/components/auth/auth-field";
@@ -9,11 +10,12 @@ const idle: AuthFormState = { status: "idle" };
 
 export function ResetPasswordForm({ token }: { token: string }) {
   const [state, action, pending] = useActionState(resetPasswordAction, idle);
+  const formRef = useFocusFirstError(state);
   const [password, setPassword] = useState("");
   const errors = state.status === "error" ? (state.fieldErrors ?? {}) : {};
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form ref={formRef} action={action} className="flex flex-col gap-4">
       <input type="hidden" name="token" value={token} />
       <AuthField
         id="reset-password"

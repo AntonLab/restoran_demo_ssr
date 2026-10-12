@@ -1,6 +1,6 @@
 "use client";
 
-import { FieldError } from "@/components/feedback/field";
+import { FieldError, errorId } from "@/components/feedback/field";
 import {
   Select,
   SelectContent,
@@ -81,6 +81,7 @@ export function DayTimeFields({
             <SelectTrigger
               aria-labelledby={`${idPrefix}-time-label`}
               aria-invalid={Boolean(error)}
+              aria-describedby={error ? errorId(idPrefix) : undefined}
               className="w-full"
             >
               <SelectValue />
@@ -95,7 +96,7 @@ export function DayTimeFields({
           </Select>
         </div>
       </div>
-      <FieldError message={error} />
+      <FieldError id={errorId(idPrefix)} message={error} />
     </div>
   );
 }

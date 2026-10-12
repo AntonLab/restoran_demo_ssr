@@ -1,5 +1,6 @@
 "use client";
 
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { useActionState, useState } from "react";
 import { reviewAction, type ReviewFormState } from "@/app/feedback/actions";
 import { ContactInput, CountedTextarea, FieldError } from "@/components/feedback/field";
@@ -11,6 +12,7 @@ const idle: ReviewFormState = { status: "idle" };
 
 export function ReviewForm() {
   const [state, action, pending] = useActionState(reviewAction, idle);
+  const formRef = useFocusFirstError(state);
   const [dishes, setDishes] = useState(0);
   const [service, setService] = useState(0);
   const [text, setText] = useState("");
@@ -22,7 +24,7 @@ export function ReviewForm() {
   const errors = state.status === "error" ? (state.fieldErrors ?? {}) : {};
 
   return (
-    <form action={action} className="relative flex flex-col gap-4">
+    <form ref={formRef} action={action} className="relative flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <span className="text-sm font-medium">Dishes</span>
         <StarInput name="dishesRating" label="Dishes" value={dishes} onChange={setDishes} />

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { useActionState, useState } from "react";
 import { checkoutAction, type CheckoutFormState } from "@/app/checkout/actions";
 import { AuthField } from "@/components/auth/auth-field";
@@ -31,6 +32,7 @@ export function CheckoutForm({
   atLimit: boolean;
 }) {
   const [state, action, pending] = useActionState(checkoutAction, idle);
+  const formRef = useFocusFirstError(state);
   const [name, setName] = useState(defaults.name);
   const [phone, setPhone] = useState(defaults.phone);
   const [address, setAddress] = useState(defaults.address);
@@ -49,7 +51,7 @@ export function CheckoutForm({
   }
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form ref={formRef} action={action} className="flex flex-col gap-4">
       <input type="hidden" name="expectedTotalCents" value={totalCents} />
       {isUser && (
         <TemplatePicker templates={templates} value={templateId} onChange={pickTemplate} />

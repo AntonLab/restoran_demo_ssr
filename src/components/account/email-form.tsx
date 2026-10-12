@@ -1,5 +1,6 @@
 "use client";
 
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { useActionState, useState } from "react";
 import { type AccountFormState, emailAction } from "@/app/account/actions";
 import { AuthField } from "@/components/auth/auth-field";
@@ -18,10 +19,11 @@ export function EmailForm({ email: initialEmail }: { email: string }) {
     },
     idle,
   );
+  const formRef = useFocusFirstError(state);
   const errors = state.status === "error" ? (state.fieldErrors ?? {}) : {};
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form ref={formRef} action={action} className="flex flex-col gap-4">
       <AuthField
         id="account-email"
         name="email"

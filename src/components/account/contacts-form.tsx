@@ -1,5 +1,6 @@
 "use client";
 
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { useActionState, useState } from "react";
 import { type AccountFormState, contactsAction } from "@/app/account/actions";
 import { AuthField } from "@/components/auth/auth-field";
@@ -15,12 +16,13 @@ export function ContactsForm({
   phone: string;
 }) {
   const [state, action, pending] = useActionState(contactsAction, idle);
+  const formRef = useFocusFirstError(state);
   const [name, setName] = useState(initialName);
   const [phone, setPhone] = useState(initialPhone);
   const errors = state.status === "error" ? (state.fieldErrors ?? {}) : {};
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form ref={formRef} action={action} className="flex flex-col gap-4">
       <AuthField
         id="account-name"
         name="name"

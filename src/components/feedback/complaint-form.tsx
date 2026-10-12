@@ -1,5 +1,6 @@
 "use client";
 
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { useActionState, useState } from "react";
 import { complaintAction, type ComplaintFormState } from "@/app/feedback/actions";
 import { ContactInput, CountedTextarea } from "@/components/feedback/field";
@@ -10,6 +11,7 @@ const idle: ComplaintFormState = { status: "idle" };
 
 export function ComplaintForm() {
   const [state, action, pending] = useActionState(complaintAction, idle);
+  const formRef = useFocusFirstError(state);
   const [text, setText] = useState("");
   const [contact, setContact] = useState("");
 
@@ -25,7 +27,7 @@ export function ComplaintForm() {
   const errors = state.status === "error" ? (state.fieldErrors ?? {}) : {};
 
   return (
-    <form action={action} className="relative flex flex-col gap-4">
+    <form ref={formRef} action={action} className="relative flex flex-col gap-4">
       <CountedTextarea
         id="complaint-text"
         name="text"

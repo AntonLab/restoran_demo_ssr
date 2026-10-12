@@ -1,4 +1,4 @@
-import { FieldError, fieldClass } from "@/components/feedback/field";
+import { FieldError, errorId, fieldClass } from "@/components/feedback/field";
 
 type Props = {
   id: string;
@@ -44,9 +44,10 @@ export function AuthField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={Boolean(error)}
+        aria-describedby={error ? errorId(id) : undefined}
         className={fieldClass}
       />
-      <FieldError message={error} />
+      <FieldError id={errorId(id)} message={error} />
     </div>
   );
 }
