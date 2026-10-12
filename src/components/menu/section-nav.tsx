@@ -15,10 +15,21 @@ export function SectionNav({ sections }: { sections: { key: string; title: strin
     let observer: IntersectionObserver | undefined;
     // The root is a 1px band at the sticky offset; the section crossing it is the active one.
     // A section's key is its anchor id minus the prefix, so map ids back through a lookup.
+    const byId = new Map(sections.map(({ key }) => [sectionAnchor(key), key]));
+    const repick = () => {
+      const found = [...byId].flatMap(([id, key]) => {
+        const el = document.getElementById(id);
+        return el ? [{ key, top: el.getBoundingClientRect().top }] : [];
+      });
+      const i = pickActive(
+        found.map((f) => f.top),
+        OFFSET,
+      );
+      if (found[i]) setActive(found[i].key);
+    };
     const observe = () => {
       observer?.disconnect();
       const bottomInset = Math.max(0, window.innerHeight - OFFSET - 1);
-      const byId = new Map(sections.map(({ key }) => [sectionAnchor(key), key]));
       observer = new IntersectionObserver(
         (entries) => {
           let crossed = false;
@@ -30,16 +41,7 @@ export function SectionNav({ sections }: { sections: { key: string; title: strin
             }
           }
           // A jump (scrollTo, long wheel) can skip the 1px band; recompute from positions.
-          if (crossed) return;
-          const found = [...byId].flatMap(([id, key]) => {
-            const el = document.getElementById(id);
-            return el ? [{ key, top: el.getBoundingClientRect().top }] : [];
-          });
-          const i = pickActive(
-            found.map((f) => f.top),
-            OFFSET,
-          );
-          if (found[i]) setActive(found[i].key);
+          if (!crossed) repick();
         },
         { rootMargin: `-${OFFSET}px 0px -${bottomInset}px 0px` },
       );
@@ -50,9 +52,13 @@ export function SectionNav({ sections }: { sections: { key: string; title: strin
     };
     observe();
     window.addEventListener("resize", observe);
+    // A jump can leap past the band, or land in a gap between sections, with no
+    // intersection change, so the observer never fires and the highlight goes stale.
+    window.addEventListener("scrollend", repick);
     return () => {
       observer?.disconnect();
       window.removeEventListener("resize", observe);
+      window.removeEventListener("scrollend", repick);
     };
   }, [sections]);
 
