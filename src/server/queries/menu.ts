@@ -1,3 +1,4 @@
+import { cache } from "react";
 import mongoose from "mongoose";
 import type { MenuFilters, MenuSort } from "@/lib/menu-params";
 import { connectDb } from "@/server/db";
@@ -35,7 +36,7 @@ type DishRow = {
   image?: { small?: string | null; medium?: string | null } | null;
 };
 
-const toCard = (d: DishRow): DishCardData => ({
+export const toCard = (d: DishRow): DishCardData => ({
   id: String(d._id),
   name: d.name,
   shortDescription: d.shortDescription,
@@ -55,10 +56,12 @@ const SORTS: Record<MenuSort, Record<string, 1 | -1>> = {
   popular: { favoritesCount: -1, order: 1 },
 };
 
-const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+export const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const activeCategoryIds = async () =>
-  (await Category.find({ status: "active" }).select("_id").lean()).map((c) => c._id);
+// cache(): the Menu, Cart and Favorites checks of one request share one read.
+export const activeCategoryIds = cache(async () =>
+  (await Category.find({ status: "active" }).select("_id").lean()).map((c) => c._id),
+);
 
 export async function getMenuSections(filters: MenuFilters): Promise<MenuSection[]> {
   await connectDb();
@@ -110,10 +113,16 @@ export async function getPopularDishes(limit = 8): Promise<DishCardData[]> {
   return dishes.map(toCard);
 }
 
-export async function getDishDetail(rawId: string): Promise<DishDetail | null> {
-  const id = rawId.toLowerCase();
+export function parseObjectId(raw: string): string | null {
+  const id = raw.toLowerCase();
   // A 12-character string is a valid ObjectId input, so require the round trip to match.
   if (!mongoose.isValidObjectId(id) || String(new mongoose.Types.ObjectId(id)) !== id) return null;
+  return id;
+}
+
+export async function getDishDetail(rawId: string): Promise<DishDetail | null> {
+  const id = parseObjectId(rawId);
+  if (!id) return null;
   await connectDb();
   const d = await Dish.findOne({
     _id: id,

@@ -1,6 +1,6 @@
 import mongoose, { Schema, type InferSchemaType, type Model } from "mongoose";
 
-export const REVIEW_STATUSES = ["pending", "approved", "rejected"] as const;
+const REVIEW_STATUSES = ["pending", "approved", "rejected"] as const;
 
 const rating = { type: Number, required: true, min: 1, max: 5, validate: Number.isInteger };
 
@@ -14,6 +14,8 @@ const reviewSchema = new Schema(
   },
   { timestamps: true },
 );
+
+reviewSchema.index({ status: 1, createdAt: -1, _id: -1 });
 
 type ReviewDoc = InferSchemaType<typeof reviewSchema>;
 

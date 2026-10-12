@@ -2,13 +2,12 @@ import type { MenuSort } from "@/lib/menu-params";
 
 export const sectionAnchor = (key: string) => `section-${key}`;
 
-export function pickActiveSection(
-  tops: { key: string; top: number }[],
-  offset: number,
-): string | undefined {
-  let active = tops[0]?.key;
-  for (const t of tops) if (t.top <= offset) active = t.key;
-  return active;
+// Index of the last section whose top is at or above the offset; the first when none is.
+export function pickActive(tops: number[], offset: number): number {
+  return Math.max(
+    0,
+    tops.findLastIndex((top) => top <= offset),
+  );
 }
 
 export const SORT_LABELS: Record<MenuSort, string> = {

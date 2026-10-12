@@ -1,12 +1,14 @@
 import type { ReactNode } from "react";
 
-const field =
+export const fieldClass =
   "w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive";
 
-export function FieldError({ message }: { message?: string }) {
+export const errorId = (id: string) => `${id}-error`;
+
+export function FieldError({ message, id }: { message?: string; id?: string }) {
   return (
     message && (
-      <p role="alert" className="text-sm text-destructive">
+      <p id={id} role="alert" className="text-sm text-destructive">
         {message}
       </p>
     )
@@ -47,10 +49,11 @@ export function CountedTextarea({ id, name, label, value, onChange, error, requi
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={Boolean(error)}
-        className={field}
+        aria-describedby={error ? errorId(id) : undefined}
+        className={fieldClass}
       />
       <span className="self-end text-xs text-muted-foreground">{value.length}/1000</span>
-      <FieldError message={error} />
+      <FieldError id={errorId(id)} message={error} />
     </Labelled>
   );
 }
@@ -66,9 +69,10 @@ export function ContactInput({ id, name, label, value, onChange, error, required
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={Boolean(error)}
-        className={field}
+        aria-describedby={error ? errorId(id) : undefined}
+        className={fieldClass}
       />
-      <FieldError message={error} />
+      <FieldError id={errorId(id)} message={error} />
     </Labelled>
   );
 }

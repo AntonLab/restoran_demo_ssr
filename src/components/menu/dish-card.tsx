@@ -1,11 +1,21 @@
-import { Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { AddToCart } from "@/components/menu/add-to-cart";
+import { FavoriteButton } from "@/components/menu/favorite-button";
+import { StatusBadge } from "@/components/site/status-badge";
 import { formatPrice } from "@/lib/format";
+import type { Viewer } from "@/lib/viewer";
 import type { DishCardData } from "@/server/queries/menu";
 
-export function DishCard({ dish, eager = false }: { dish: DishCardData; eager?: boolean }) {
+export function DishCard({
+  dish,
+  viewer,
+  eager = false,
+}: {
+  dish: DishCardData;
+  viewer: Viewer;
+  eager?: boolean;
+}) {
   return (
     <article className="relative flex h-full flex-col overflow-hidden rounded-xl border bg-card text-card-foreground">
       <Image
@@ -31,21 +41,10 @@ export function DishCard({ dish, eager = false }: { dish: DishCardData; eager?: 
         <p className="text-xs text-muted-foreground">{dish.weight}</p>
         <div className="mt-auto flex items-center justify-between gap-2">
           <span className="font-semibold text-primary">{formatPrice(dish.priceCents)}</span>
-          {!dish.inStock && (
-            <span className="rounded-md bg-muted px-2 py-0.5 text-xs">Out of stock</span>
-          )}
-          <span className="flex items-center gap-1 text-sm text-muted-foreground">
-            <Heart aria-hidden className="size-4" />
-            <span aria-hidden>{dish.favoritesCount}</span>
-            <span className="sr-only">{dish.favoritesCount} favorites</span>
-          </span>
+          {!dish.inStock && <StatusBadge>Out of stock</StatusBadge>}
+          <FavoriteButton dishId={dish.id} count={dish.favoritesCount} viewer={viewer} />
         </div>
-        <div className="flex items-center gap-2">
-          <Button disabled size="sm">
-            Add to cart
-          </Button>
-          <span className="text-xs text-muted-foreground">Coming soon</span>
-        </div>
+        <AddToCart dishId={dish.id} name={dish.name} inStock={dish.inStock} viewer={viewer} />
       </div>
     </article>
   );

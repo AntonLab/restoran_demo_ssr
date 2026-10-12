@@ -6,7 +6,12 @@ const userSchema = new Schema(
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     name: { type: String, required: true },
-    phone: { type: String },
+    phone: {
+      type: String,
+      required: function (this: { role?: string }) {
+        return this.role === "user";
+      },
+    },
   },
   { timestamps: true },
 );

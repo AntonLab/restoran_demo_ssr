@@ -9,15 +9,23 @@
  * never starts stale. The script copies the git-ignored `.env.local` from the
  * main checkout: without it the dev server and the seed cannot reach MongoDB,
  * and an agent cannot copy it itself because `.env.local` is behind a deny
- * rule. Then it installs.
+ * rule. It points `UPLOADS_DIR` at the main checkout's `uploads/` unless
+ * `.env.local` sets it, and installs with the Node major `.nvmrc` names.
  *
  * Removal refuses a worktree with uncommitted changes or a branch that
  * `origin/dev` does not contain yet. It also deletes the main checkout's
  * `.playwright-mcp` and the `docs/superpowers` notes whose topic is `<name>`.
  */
 import { execFileSync, execSync } from "node:child_process";
-import { copyFileSync, existsSync, readdirSync, rmSync } from "node:fs";
-import { join, resolve } from "node:path";
+import {
+  appendFileSync,
+  copyFileSync,
+  existsSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+} from "node:fs";
+import { delimiter, join, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const git = (...args) => execFileSync("git", args, { cwd: root, stdio: "inherit" });
@@ -78,6 +86,23 @@ const remove = (name) => {
   console.log(`worktree: removed ${name}`);
 };
 
+// nvm-windows keeps `v<x>/node.exe` under NVM_HOME; nvm keeps
+// `versions/node/v<x>/bin/node` under NVM_DIR. Returns the highest match.
+const findNodeWithMajor = (major, { NVM_HOME, NVM_DIR } = process.env) => {
+  const [base, binSub] = NVM_HOME
+    ? [NVM_HOME, ""]
+    : NVM_DIR
+      ? [join(NVM_DIR, "versions", "node"), "bin"]
+      : [];
+  if (!base || !existsSync(base)) return null;
+  const version = readdirSync(base)
+    .filter((d) => d.startsWith(`v${major}.`))
+    .map((d) => d.slice(1))
+    .toSorted((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    .at(-1);
+  return version ? { version, dir: join(base, `v${version}`, binSub) } : null;
+};
+
 const create = (name, branch, startPoint = "origin/dev") => {
   const target = worktreePath(name);
   if (existsSync(target)) {
@@ -94,11 +119,37 @@ const create = (name, branch, startPoint = "origin/dev") => {
       console.log(`worktree: copied ${envFile}`);
     }
   }
+  // `uploads/` is git-ignored but the worktree shares the main checkout's
+  // MongoDB, whose Dishes point at images there; the image route defaults to
+  // `<cwd>/uploads` and would 404 every seeded image.
+  const envLocal = join(target, ".env.local");
+  if (existsSync(envLocal) && !/^UPLOADS_DIR=/m.test(readFileSync(envLocal, "utf8"))) {
+    appendFileSync(envLocal, `\nUPLOADS_DIR=${join(root, "uploads").replaceAll("\\", "/")}\n`);
+    console.log("worktree: UPLOADS_DIR points at the main checkout's uploads");
+  }
+
+  // `.npmrc` sets engine-strict, so installing under a Node the dependencies
+  // reject (EBADENGINE) fails. `nvm use` would change Node machine-wide, so
+  // prepend the matching version's directory to this install's PATH only.
+  const env = { ...process.env };
+  const major = readFileSync(join(target, ".nvmrc"), "utf8").trim().replace(/^v/, "").split(".")[0];
+  if (process.versions.node.split(".")[0] !== major) {
+    const found = findNodeWithMajor(major);
+    if (!found) {
+      console.error(
+        `worktree: Node ${major} (.nvmrc) is not installed; run \`nvm install ${major}\``,
+      );
+      process.exit(1);
+    }
+    env.PATH = `${found.dir}${delimiter}${process.env.PATH}`;
+    console.log(`worktree: installing with Node ${found.version} from .nvmrc`);
+  }
 
   // One string: npm is npm.cmd on Windows, which needs a shell, and an args
   // array beside `shell: true` trips Node's DEP0190 warning.
   execSync("npm install --silent --no-audit --no-fund", {
     cwd: target,
+    env,
     stdio: "inherit",
   });
 

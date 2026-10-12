@@ -29,8 +29,12 @@ A signed-in browser, identified by the `sid` cookie. The database keeps only
 the SHA-256 of its token; it lasts 7 days and every sign-in starts a new one.
 
 **Account area**:
-A User's own pages: Order history, contact details, Order templates and
-Favorites.
+A User's own pages: contact details, Order history, Bookings, Order templates
+and Favorites.
+
+**Order history**:
+A User's own Orders in the Account area, newest first, filtered by the date
+placed, status and Dish name.
 _Avoid_: Cabinet, profile, dashboard
 
 ### Menu
@@ -77,15 +81,25 @@ the top 8 active Dishes In stock.
 ### Ordering
 
 **Cart**:
-The Dishes a Guest or User intends to order, stored in the database. A Guest's
-Cart is keyed by an anonymous httpOnly cookie and merges into the User's Cart
-at sign-in.
+The Dishes a Guest or User intends to order, stored in the database, with a
+quantity of 1 to 20 per Dish and at most 30 Dishes. A Guest's Cart is keyed
+by an anonymous httpOnly cookie, expires after 30 days unused, and merges into
+the User's Cart at sign-in or registration by adding quantities (still capped
+at 20). The Admin has no Cart. Prices in a Cart are live; they are fixed only
+by the Price snapshot when the Order is placed.
 _Avoid_: Basket
+
+**Unavailable item**:
+A Cart line whose Dish is inactive, out of stock or in an inactive Category.
+It stays in the Cart, marked, and blocks checkout until removed. A line whose
+Dish is soft-deleted is dropped from the Cart silently instead.
 
 **Order**:
 A delivery request: Customer contacts, address, delivery time, Order items and
-total. Paid in cash on delivery. A Guest's Orders are found by name and phone
-and attach to a User who registers with the same phone.
+total. The total is the sum of the items: no minimum and no delivery fee. Paid
+in cash on delivery. A Guest sees the Order's Number once, on the confirmation
+page; the Admin finds a Guest's Orders by name and phone. They attach to a
+User who registers with the same phone in the same browser.
 _Avoid_: Purchase, checkout (that is the step, not the record)
 
 **Price snapshot**:
@@ -94,31 +108,42 @@ is placed. Later price changes never touch it; an Admin's edit recalculates
 the total from the snapshots.
 
 **Order template**:
-A User's saved name, phone and address for Orders. The last used one is
-preselected.
+A User's saved name, phone and address for Orders, listed by its address. A
+User keeps at most 5. Checkout offers to save a new combination; the last used
+one is preselected.
 _Avoid_: Saved address, profile address
 
 **Delivery time**:
-When an Order should arrive: inside opening hours and no earlier than now plus
-1 hour.
+When an Order should arrive: a 15-minute step within today and the next 6
+days, inside that day's Schedule (closing time included) and no earlier than
+now plus 1 hour.
 
 ### Bookings
 
 **Booking**:
-A table reservation: contact, start time, number of guests and an optional
-Pre-order. Lasts 2 hours, starts on a 30-minute Slot, must fit inside opening
-hours, and is refused when the Concurrent booking limit is reached. There is
-no table entity.
+A table reservation: contact, start time, 1 to 12 guests and an optional
+Pre-order. Lasts 2 hours, starts on a Slot, and is refused when the
+Concurrent booking limit is reached. A Guest or User may book; the Admin may
+not. A Guest's Bookings attach to a User who registers with the same phone in
+the same browser.
+Later changes to the Schedule or the limit never touch existing Bookings.
+There is no table entity.
 _Avoid_: Reservation (in code), table order
 
 **Slot**:
-A 30-minute step a Booking may start on.
+A 30-minute step a Booking may start on: within today and the next 29 days, no
+earlier than now plus 1 hour, and with its whole 2 hours inside that day's
+Schedule (the last Slot starts 2 hours before closing).
 
 **Pre-order**:
-Dishes chosen with a Booking, with Price snapshots.
+The Cart's Dishes attached to a Booking, with Price snapshots. Chosen only by
+including the Cart; including it empties the Cart, and an Unavailable item
+blocks the Booking as it blocks checkout.
 
 **Concurrent booking limit**:
-`Settings.maxConcurrentBookings`: how many Bookings may overlap at once.
+`Settings.maxConcurrentBookings`: the most Bookings in status new or confirmed
+that may be in progress at the same instant. A Booking counts as one whatever
+its number of guests.
 
 ### Feedback
 
@@ -159,11 +184,11 @@ _Avoid_: id (that is the Mongo `_id`)
 
 **New indicator**:
 The icon on an admin tab showing that Orders, Bookings, Complaints or Reviews
-in status new (or pending) exist. Kept live over SSE; the count of documents
-in that status is the source of truth.
+in status new (or pending) exist. The count of documents in that status is the
+source of truth.
 
 **Mail emulator**:
-The `log` mail delivery: each email is printed to the server log as
+The mail layer: each email is printed to the server log as
 `Mail to {to}: {subject}` with its text. Password reset links are copied from
 there.
 
@@ -175,8 +200,11 @@ and demo Dishes with images and `favoritesCount`.
 
 - **Order**: new, accepted, delivery, completed; cancelled from new, accepted
   or delivery. completed and cancelled are final. A User may cancel only a new
-  Order.
-- **Booking**: new, confirmed, done; cancelled from new or confirmed.
+  Order. Each change is kept in the Order's history with its time and whether
+  the User or the Admin made it.
+- **Booking**: new, confirmed, done; cancelled from new or confirmed. A User
+  may cancel only a new Booking that has not started. Each change is kept in
+  the Booking's history like an Order's.
 - **Complaint**: new, in_review; in_review and resolved toggle.
 - **Review**: pending, then approved or rejected by the Admin.
 

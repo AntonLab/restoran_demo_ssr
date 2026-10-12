@@ -1,10 +1,11 @@
-import { Heart } from "lucide-react";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
+import { AddToCart } from "@/components/menu/add-to-cart";
+import { FavoriteButton } from "@/components/menu/favorite-button";
 import { formatPrice } from "@/lib/format";
+import type { Viewer } from "@/lib/viewer";
 import type { DishDetail } from "@/server/queries/menu";
 
-export function DishDetailView({ dish }: { dish: DishDetail }) {
+export function DishDetailView({ dish, viewer }: { dish: DishDetail; viewer: Viewer }) {
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <Image
@@ -37,17 +38,8 @@ export function DishDetailView({ dish }: { dish: DishDetail }) {
           <dt className="text-muted-foreground">Availability</dt>
           <dd>{dish.inStock ? "In stock" : "Out of stock"}</dd>
         </dl>
-        <span className="flex items-center gap-1 text-sm text-muted-foreground">
-          <Heart aria-hidden className="size-4" />
-          <span aria-hidden>{dish.favoritesCount}</span>
-          <span className="sr-only">{dish.favoritesCount} favorites</span>
-        </span>
-        <div className="flex items-center gap-2">
-          <Button disabled size="sm">
-            Add to cart
-          </Button>
-          <span className="text-xs text-muted-foreground">Coming soon</span>
-        </div>
+        <FavoriteButton dishId={dish.id} count={dish.favoritesCount} viewer={viewer} />
+        <AddToCart dishId={dish.id} name={dish.name} inStock={dish.inStock} viewer={viewer} />
       </div>
     </div>
   );

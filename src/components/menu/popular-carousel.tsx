@@ -4,13 +4,16 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef } from "react";
 import { DishCard } from "@/components/menu/dish-card";
 import { Button } from "@/components/ui/button";
+import type { Viewer } from "@/lib/viewer";
 import type { DishCardData } from "@/server/queries/menu";
 
-export function PopularCarousel({ dishes }: { dishes: DishCardData[] }) {
+export function PopularCarousel({ dishes, viewer }: { dishes: DishCardData[]; viewer: Viewer }) {
   const scroller = useRef<HTMLElement>(null);
   const scroll = (dir: 1 | -1) => {
     const el = scroller.current;
-    if (el) el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
+    if (!el) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: reduce ? "auto" : "smooth" });
   };
 
   return (
@@ -26,7 +29,7 @@ export function PopularCarousel({ dishes }: { dishes: DishCardData[] }) {
         <ul className="flex w-max gap-4">
           {dishes.map((dish, i) => (
             <li key={dish.id} className="w-64 snap-start">
-              <DishCard dish={dish} eager={i === 0} />
+              <DishCard dish={dish} viewer={viewer} eager={i === 0} />
             </li>
           ))}
         </ul>

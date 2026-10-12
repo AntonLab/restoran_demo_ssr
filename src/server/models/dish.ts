@@ -14,6 +14,8 @@ const dishSchema = new Schema(
     status: { type: String, enum: ["active", "inactive"], default: "active" },
     order: { type: Number, default: 0, validate: Number.isInteger },
     favoritesCount: { type: Number, default: 0, min: 0, validate: Number.isInteger },
+    // Demo baseline from the Seed; real Favorite marks are added on top of it.
+    favoritesBase: { type: Number, default: 0, min: 0, validate: Number.isInteger },
     image: {
       small: String,
       medium: String,
@@ -24,6 +26,7 @@ const dishSchema = new Schema(
 );
 
 dishSchema.index({ status: 1, deletedAt: 1, categoryId: 1, order: 1 });
+dishSchema.index({ status: 1, deletedAt: 1, favoritesCount: -1, order: 1 });
 
 type DishDoc = InferSchemaType<typeof dishSchema>;
 
