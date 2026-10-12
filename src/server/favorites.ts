@@ -32,7 +32,7 @@ async function syncCount(dishId: string): Promise<number> {
   const marks = await Favorite.countDocuments({ dishId });
   const dish = await Dish.findOneAndUpdate(
     { _id: dishId },
-    [{ $set: { favoritesCount: { $add: ["$favoritesBase", marks] } } }],
+    [{ $set: { favoritesCount: { $add: [{ $ifNull: ["$favoritesBase", 0] }, marks] } } }],
     { returnDocument: "after", updatePipeline: true },
   )
     .select("favoritesCount")

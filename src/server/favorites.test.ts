@@ -80,6 +80,15 @@ describe("addFavorite / removeFavorite", () => {
     expect(await removeFavorite(user, dish)).toMatchObject({ favoritesCount: 41 });
     expect(await count(dish)).toBe(41);
   });
+  test("a Dish from an older Seed without favoritesBase counts as base 0", async () => {
+    const dish = await mkDish();
+    await Dish.collection.updateOne(
+      { _id: new mongoose.Types.ObjectId(dish) },
+      { $unset: { favoritesBase: "" } },
+    );
+    expect(await addFavorite(uid(), dish)).toMatchObject({ favoritesCount: 1 });
+    expect(await count(dish)).toBe(1);
+  });
   test("a stale count heals to base + marks", async () => {
     const dish = await mkDish({ favoritesBase: 10, favoritesCount: 99 });
     expect(await addFavorite(uid(), dish)).toMatchObject({ favoritesCount: 11 });
