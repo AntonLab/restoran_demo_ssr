@@ -31,7 +31,13 @@ export function StarInput({
 
   return (
     <>
-      <div role="radiogroup" aria-label={label} className="flex">
+      <div
+        role="radiogroup"
+        aria-label={label}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? errorId(name) : undefined}
+        className="flex"
+      >
         {STARS.map((n) => {
           const tabStop = value === n || (value === 0 && n === 1);
           return (
@@ -44,10 +50,6 @@ export function StarInput({
               aria-checked={value === n}
               aria-label={`${n} stars`}
               tabIndex={tabStop ? 0 : -1}
-              // useFocusFirstError can only focus the radio that holds the tab stop, not the group div.
-              // oxlint-disable-next-line jsx-a11y/role-supports-aria-props
-              aria-invalid={tabStop && error ? true : undefined}
-              aria-describedby={tabStop && error ? errorId(name) : undefined}
               onClick={() => onChange(n)}
               onKeyDown={onKeyDown}
               className="flex size-9 items-center justify-center rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"

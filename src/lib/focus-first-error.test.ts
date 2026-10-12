@@ -9,10 +9,19 @@ const asRoot = (querySelector: () => unknown) => ({ querySelector }) as unknown 
 describe("focusFirstInvalid", () => {
   it("focuses the first aria-invalid field", () => {
     const focus = vi.fn();
-    const querySelector = vi.fn(() => ({ focus }));
+    const querySelector = vi.fn(() => ({ focus, matches: () => true }));
     focusFirstInvalid(asRoot(querySelector));
     expect(querySelector).toHaveBeenCalledWith('[aria-invalid="true"]');
     expect(focus).toHaveBeenCalledOnce();
+  });
+
+  it("focuses the first focusable descendant of a non-focusable invalid group", () => {
+    const focus = vi.fn();
+    const groupFocus = vi.fn();
+    const group = { focus: groupFocus, matches: () => false, querySelector: () => ({ focus }) };
+    focusFirstInvalid(asRoot(() => group));
+    expect(focus).toHaveBeenCalledOnce();
+    expect(groupFocus).not.toHaveBeenCalled();
   });
 
   it("does nothing without a form or an invalid field", () => {
