@@ -26,28 +26,31 @@ async function visibleDish(rawId: string): Promise<string | null> {
   return dish ? id : null;
 }
 
-const currentCount = async (dishId: string) =>
-  (await Dish.findById(dishId).select("favoritesCount").lean())?.favoritesCount ?? 0;
+// Counting the marks instead of $inc: a crash between the mark and the counter cannot drift it,
+// and the next toggle heals a stale value.
+async function syncCount(dishId: string): Promise<number> {
+  const favoritesCount = await Favorite.countDocuments({ dishId });
+  await Dish.updateOne({ _id: dishId }, { favoritesCount });
+  return favoritesCount;
+}
 
 export async function addFavorite(userId: string, rawDishId: string): Promise<FavoriteResult> {
   const dishId = await visibleDish(rawDishId);
   if (!dishId) return NOT_FOUND;
   try {
     await Favorite.create({ userId, dishId });
-    await Dish.updateOne({ _id: dishId }, { $inc: { favoritesCount: 1 } });
   } catch (err) {
-    // Duplicate key: the pair is already marked, so the counter was already bumped.
+    // Duplicate key: the pair is already marked.
     if ((err as { code?: number }).code !== 11000) throw err;
   }
-  return { ok: true, favorited: true, favoritesCount: await currentCount(dishId) };
+  return { ok: true, favorited: true, favoritesCount: await syncCount(dishId) };
 }
 
 export async function removeFavorite(userId: string, rawDishId: string): Promise<FavoriteResult> {
   const dishId = await visibleDish(rawDishId);
   if (!dishId) return NOT_FOUND;
-  const { deletedCount } = await Favorite.deleteOne({ userId, dishId });
-  if (deletedCount === 1) await Dish.updateOne({ _id: dishId }, { $inc: { favoritesCount: -1 } });
-  return { ok: true, favorited: false, favoritesCount: await currentCount(dishId) };
+  await Favorite.deleteOne({ userId, dishId });
+  return { ok: true, favorited: false, favoritesCount: await syncCount(dishId) };
 }
 
 export async function toggleFavorite(userId: string, rawDishId: string): Promise<FavoriteResult> {

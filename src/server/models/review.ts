@@ -15,6 +15,8 @@ const reviewSchema = new Schema(
   { timestamps: true },
 );
 
+reviewSchema.index({ status: 1, createdAt: -1, _id: -1 });
+
 type ReviewDoc = InferSchemaType<typeof reviewSchema>;
 
 export const Review =

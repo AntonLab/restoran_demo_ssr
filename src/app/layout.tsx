@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Montserrat } from "next/font/google";
@@ -24,7 +25,15 @@ export default async function RootLayout({ children, modal }: LayoutProps<"/">) 
   return (
     <html lang="en" className={`${montserrat.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <Header siteName={settings.name} auth={<HeaderAuth />} />
+        <Header
+          siteName={settings.name}
+          auth={
+            // Same width as the signed-out links, so the header does not jump when they stream in.
+            <Suspense fallback={<span className="h-9 w-48" aria-hidden="true" />}>
+              <HeaderAuth />
+            </Suspense>
+          }
+        />
         <main className="flex-1">{children}</main>
         <Footer settings={settings} />
         {modal}

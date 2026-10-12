@@ -5,9 +5,8 @@ import { DishModal } from "@/components/menu/dish-modal";
 import { getViewer } from "@/server/auth/get-viewer";
 
 export default async function Page({ params }: PageProps<"/menu/dish/[id]">) {
-  const dish = await loadDish(params);
+  const [dish, viewer] = await Promise.all([loadDish(params), getViewer()]);
   if (!dish) notFound();
-  const viewer = await getViewer();
   return (
     <DishModal label={dish.name}>
       <DishDetailView dish={dish} viewer={viewer} />

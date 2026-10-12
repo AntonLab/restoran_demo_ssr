@@ -24,6 +24,7 @@ const dishSchema = new Schema(
 );
 
 dishSchema.index({ status: 1, deletedAt: 1, categoryId: 1, order: 1 });
+dishSchema.index({ status: 1, deletedAt: 1, favoritesCount: -1, order: 1 });
 
 type DishDoc = InferSchemaType<typeof dishSchema>;
 

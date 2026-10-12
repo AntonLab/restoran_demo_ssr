@@ -13,6 +13,8 @@ const complaintSchema = new Schema(
   { timestamps: true },
 );
 
+complaintSchema.index({ status: 1, createdAt: -1 });
+
 type ComplaintDoc = InferSchemaType<typeof complaintSchema>;
 
 export const Complaint =
