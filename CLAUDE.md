@@ -49,7 +49,9 @@ English, money is USD stored as integer cents.
 - **Plugins**: `.claude/settings.json` enables superpowers, mattpocock-skills,
   code-review, ponytail, caveman and swarm.
 - **Context-saving agents** (`.claude/agents/`, git-ignored, per clone):
-  `repo-auditor` for any "check / audit / find all" request; `gate-runner`
+  `repo-auditor` for any "check / audit / find all" request (each finding
+  the user declines gets a line in `docs/agents/rejected-findings.md`, with
+  the reason, so later audits skip it); `gate-runner`
   (haiku) for the gates and CI; `ui-checker` for pages and flows in the
   browser through the Playwright MCP. Search goes to `Explore` or
   `caveman:cavecrew-investigator`, never `general-purpose`.
