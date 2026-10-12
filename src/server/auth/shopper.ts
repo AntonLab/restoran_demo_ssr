@@ -4,7 +4,7 @@ import { formatRetry, type Limiter } from "@/server/rate-limit";
 import type { SessionInfo } from "@/server/auth/session-store";
 
 export const CART_COOKIE = "cid";
-export const CART_COOKIE_MAX_AGE = 2_592_000;
+const CART_COOKIE_MAX_AGE = 2_592_000;
 
 export const cartCookieOptions = (secure: boolean) => ({
   httpOnly: true,

@@ -9,6 +9,7 @@ const favoriteSchema = new Schema(
 );
 favoriteSchema.index({ userId: 1, dishId: 1 }, { unique: true });
 favoriteSchema.index({ userId: 1, createdAt: -1 });
+favoriteSchema.index({ dishId: 1 });
 
 type FavoriteDoc = InferSchemaType<typeof favoriteSchema>;
 

@@ -13,9 +13,8 @@ export async function generateMetadata({
 }
 
 export default async function Page({ params }: PageProps<"/menu/dish/[id]">) {
-  const dish = await loadDish(params);
+  const [dish, viewer] = await Promise.all([loadDish(params), getViewer()]);
   if (!dish) notFound();
-  const viewer = await getViewer();
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-6">
       <Link

@@ -1,27 +1,21 @@
 "use client";
 
 import { ConfirmDialog } from "@/components/account/confirm-dialog";
+import { ListTable } from "@/components/account/list-table";
 import { useCancelDialog } from "@/components/account/use-cancel-dialog";
 import { StatusBadge } from "@/components/site/status-badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { cancelOrderAction } from "@/app/account/orders/actions";
 import { formatDateTime, formatPrice } from "@/lib/format";
 import { canUserCancel, ORDER_STATUS_LABELS } from "@/lib/order-status";
-import { cancelFailureText, formatItems } from "@/lib/order-view";
+import { formatItems } from "@/lib/order-view";
 import type { OrderRow } from "@/server/orders";
 
 export function OrdersTable({ orders, timezone }: { orders: OrderRow[]; timezone: string }) {
   const { target, error, pending, open, onOpenChange, confirm } = useCancelDialog(
     cancelOrderAction,
-    cancelFailureText,
+    ORDER_STATUS_LABELS,
     "Could not cancel the order. Try again.",
   );
 
@@ -39,38 +33,21 @@ export function OrdersTable({ orders, timezone }: { orders: OrderRow[]; timezone
 
   return (
     <>
-      <Table className="hidden md:table">
-        <TableHeader>
-          <TableRow>
-            <TableHead>Order</TableHead>
-            <TableHead>Placed</TableHead>
-            <TableHead>Items</TableHead>
-            <TableHead>Total</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>
-              <span className="sr-only">Actions</span>
-            </TableHead>
+      <ListTable
+        headings={["Order", "Placed", "Items", "Total", "Status"]}
+        rows={orders.map((o) => (
+          <TableRow key={o.id}>
+            <TableCell className="font-medium">#{o.number}</TableCell>
+            <TableCell>{formatDateTime(o.createdAt, timezone)}</TableCell>
+            <TableCell className="break-words whitespace-normal">{formatItems(o.items)}</TableCell>
+            <TableCell>{formatPrice(o.totalCents)}</TableCell>
+            <TableCell>
+              <StatusBadge>{ORDER_STATUS_LABELS[o.status]}</StatusBadge>
+            </TableCell>
+            <TableCell>{cancelButton(o)}</TableCell>
           </TableRow>
-        </TableHeader>
-        <TableBody>
-          {orders.map((o) => (
-            <TableRow key={o.id}>
-              <TableCell className="font-medium">#{o.number}</TableCell>
-              <TableCell>{formatDateTime(o.createdAt, timezone)}</TableCell>
-              <TableCell className="break-words whitespace-normal">
-                {formatItems(o.items)}
-              </TableCell>
-              <TableCell>{formatPrice(o.totalCents)}</TableCell>
-              <TableCell>
-                <StatusBadge>{ORDER_STATUS_LABELS[o.status]}</StatusBadge>
-              </TableCell>
-              <TableCell>{cancelButton(o)}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <ul className="flex flex-col gap-3 md:hidden">
-        {orders.map((o) => (
+        ))}
+        cards={orders.map((o) => (
           <li key={o.id} className="flex flex-col gap-1 rounded-lg border p-4 text-sm">
             <div className="flex items-center justify-between gap-2">
               <span className="font-medium">#{o.number}</span>
@@ -82,7 +59,7 @@ export function OrdersTable({ orders, timezone }: { orders: OrderRow[]; timezone
             {canUserCancel(o.status) && <div className="pt-1">{cancelButton(o)}</div>}
           </li>
         ))}
-      </ul>
+      />
       <ConfirmDialog
         open={target !== null}
         onOpenChange={onOpenChange}

@@ -4,9 +4,9 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UtensilsCrossed } from "lucide-react";
+import { NavLink } from "@/components/site/nav-link";
 import { NAV_ITEMS } from "@/config/nav";
 import { isNavActive } from "@/lib/nav";
-import { cn } from "@/lib/utils";
 
 export function Header({ siteName, auth }: { siteName: string; auth: ReactNode }) {
   const pathname = usePathname();
@@ -28,23 +28,9 @@ export function Header({ siteName, auth }: { siteName: string; auth: ReactNode }
           className="order-last w-full min-w-0 sm:order-none sm:w-auto sm:overflow-x-auto"
         >
           <ul className="flex items-center gap-x-4 px-1 py-1 text-sm whitespace-nowrap">
-            {NAV_ITEMS.map(({ label, href }) => {
-              const active = isNavActive(pathname, href);
-              return (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    aria-current={active ? "page" : undefined}
-                    className={cn(
-                      "hover:text-primary rounded-sm py-1 transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-                      active ? "text-primary font-semibold" : "text-foreground",
-                    )}
-                  >
-                    {label}
-                  </Link>
-                </li>
-              );
-            })}
+            {NAV_ITEMS.map(({ label, href }) => (
+              <NavLink key={href} href={href} label={label} active={isNavActive(pathname, href)} />
+            ))}
           </ul>
         </nav>
         <div className="flex shrink-0 items-center gap-3 text-sm">{auth}</div>

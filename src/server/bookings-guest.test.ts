@@ -16,6 +16,8 @@ beforeEach(async () => {
 });
 
 const uid = () => String(new mongoose.Types.ObjectId());
+const CID = "3f2b8c1e-9d4a-4e6b-8a1c-0d5e7f9a2b34";
+const OTHER_CID = "aaaaaaaa-9d4a-4e6b-8a1c-0d5e7f9a2b34";
 const mk = (userId: string | null, patch: Record<string, unknown> = {}) =>
   Booking.create({
     number: ++seq,
@@ -35,6 +37,7 @@ const mk = (userId: string | null, patch: Record<string, unknown> = {}) =>
     totalCents: 1000,
     status: "new",
     history: [{ status: "new", at: new Date() }],
+    guestCid: CID,
     ...patch,
   });
 
@@ -75,20 +78,30 @@ describe("getBookingConfirmation", () => {
 });
 
 describe("attachGuestBookings", () => {
-  test("gives Guest Bookings with the same phone to the User and leaves others alone", async () => {
+  test("gives Guest Bookings with the same phone and cid to the User and leaves others alone", async () => {
     const u = uid();
     const other = uid();
-    await mk(null); // 1: same phone, Guest
+    await mk(null); // 1: same phone, same browser
     await mk(other); // 2: same phone, other User
     await mk(null, { contact: { name: "Bob", phone: "+15559999999" } }); // 3
-    expect(await attachGuestBookings(u, "+15551234567")).toBe(1);
+    expect(await attachGuestBookings(u, "+15551234567", CID)).toBe(1);
     expect(String((await Booking.findOne({ number: 1 }).lean())?.userId)).toBe(u);
     expect(String((await Booking.findOne({ number: 2 }).lean())?.userId)).toBe(other);
     expect((await Booking.findOne({ number: 3 }).lean())?.userId).toBeNull();
   });
   test("a malformed phone or user id attaches nothing", async () => {
     await mk(null);
-    expect(await attachGuestBookings(uid(), "12")).toBe(0);
-    expect(await attachGuestBookings("nope", "+15551234567")).toBe(0);
+    expect(await attachGuestBookings(uid(), "12", CID)).toBe(0);
+    expect(await attachGuestBookings("nope", "+15551234567", CID)).toBe(0);
+  });
+  test("a Booking placed from another browser stays unattached", async () => {
+    await mk(null, { guestCid: OTHER_CID });
+    expect(await attachGuestBookings(uid(), "+15551234567", CID)).toBe(0);
+  });
+  test.each([null, undefined, "", "forged"])("cid %j attaches nothing", async (cid) => {
+    await mk(null);
+    await mk(null, { guestCid: undefined });
+    expect(await attachGuestBookings(uid(), "+15551234567", cid)).toBe(0);
+    expect(await Booking.countDocuments({ userId: null })).toBe(2);
   });
 });

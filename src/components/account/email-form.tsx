@@ -2,8 +2,9 @@
 
 import { useActionState, useState } from "react";
 import { type AccountFormState, emailAction } from "@/app/account/actions";
+import { FormFooter } from "@/components/account/form-footer";
 import { AuthField } from "@/components/auth/auth-field";
-import { Button } from "@/components/ui/button";
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 
 const idle: AccountFormState = { status: "idle" };
 
@@ -18,10 +19,11 @@ export function EmailForm({ email: initialEmail }: { email: string }) {
     },
     idle,
   );
+  const formRef = useFocusFirstError(state);
   const errors = state.status === "error" ? (state.fieldErrors ?? {}) : {};
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form ref={formRef} action={action} className="flex flex-col gap-4">
       <AuthField
         id="account-email"
         name="email"
@@ -44,15 +46,7 @@ export function EmailForm({ email: initialEmail }: { email: string }) {
         onChange={setPassword}
         error={errors.currentPassword?.[0]}
       />
-      {state.status === "error" && (
-        <p role="alert" className="text-sm text-destructive">
-          {state.error}
-        </p>
-      )}
-      {state.status === "success" && <output className="block text-sm">{state.message}</output>}
-      <Button type="submit" disabled={pending} className="self-start">
-        {pending ? "Saving…" : "Change email"}
-      </Button>
+      <FormFooter state={state} pending={pending} label="Change email" />
     </form>
   );
 }

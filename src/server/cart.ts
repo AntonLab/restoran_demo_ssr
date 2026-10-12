@@ -1,3 +1,4 @@
+import { cache } from "react";
 import mongoose from "mongoose";
 import { MAX_LINES, MAX_QTY } from "@/lib/cart-limits";
 import { connectDb } from "@/server/db";
@@ -5,8 +6,6 @@ import { Cart } from "@/server/models/cart";
 import { Category } from "@/server/models/category";
 import { Dish } from "@/server/models/dish";
 import { activeCategoryIds, parseObjectId } from "@/server/queries/menu";
-
-export { MAX_LINES, MAX_QTY };
 
 export const userCartKey = (userId: string) => `user:${userId}`;
 export const guestCartKey = (cid: string) => `guest:${cid}`;
@@ -44,10 +43,13 @@ async function checkDishOrderable(id: string): Promise<CartResult> {
   return visible ? { ok: true } : fail("Dish is unavailable.");
 }
 
-async function cartItems(ownerKey: string) {
+// cache(): the header count and the Viewer's quantities share one read per request. Only render
+// code reads through it; mutations load the Cart themselves, so a Server Action never sees a
+// stale copy and the re-render after it starts a new cache.
+const cartItems = cache(async (ownerKey: string) => {
   const cart = await Cart.findOne({ ownerKey }).select("items").lean();
   return cart?.items ?? [];
-}
+});
 
 const MAX_EDIT_ATTEMPTS = 3;
 

@@ -8,7 +8,7 @@ import { User } from "@/server/models/user";
 import { createRateLimiter, type Limiter } from "@/server/rate-limit";
 
 // One budget for both actions: otherwise an attacker alternates them to double the guesses.
-export const passwordAttemptLimiter = createRateLimiter({ limit: 10, windowMs: 900_000 });
+const passwordAttemptLimiter = createRateLimiter({ limit: 10, windowMs: 900_000 });
 
 type Result = { ok: true } | AccountFailure;
 

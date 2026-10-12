@@ -11,7 +11,7 @@ import { afterRegister, afterSignIn } from "@/server/auth/sign-in-hooks";
 import { SESSION_COOKIE } from "@/server/auth/session-store";
 import { getEnv } from "@/server/env";
 import type { FieldErrors } from "@/server/feedback";
-import { getMailDelivery } from "@/server/mail";
+import { sendMail } from "@/server/mail";
 import { requestPasswordReset, resetPassword } from "@/server/password-reset";
 
 export type AuthFormState =
@@ -65,7 +65,7 @@ export async function forgotPasswordAction(
   if (mail) {
     after(async () => {
       try {
-        await getMailDelivery().send(mail);
+        await sendMail(mail);
       } catch {
         // No address and no token: the log must not leak either.
         console.error("Password reset mail failed");

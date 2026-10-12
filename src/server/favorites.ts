@@ -26,28 +26,51 @@ async function visibleDish(rawId: string): Promise<string | null> {
   return dish ? id : null;
 }
 
-const currentCount = async (dishId: string) =>
-  (await Dish.findById(dishId).select("favoritesCount").lean())?.favoritesCount ?? 0;
+// Count the marks instead of $inc: a crash between mark and counter cannot drift, and the next toggle heals it. The Seed baseline is added on top.
+// `delta` is how many marks this call added (+1) or removed (-1); a Dish seeded before favoritesBase existed derives its base once from the count before the toggle.
+async function syncCount(dishId: string, delta: number): Promise<number> {
+  const marks = await Favorite.countDocuments({ dishId });
+  const dish = await Dish.findOneAndUpdate(
+    { _id: dishId },
+    [
+      {
+        $set: {
+          favoritesBase: {
+            $ifNull: [
+              "$favoritesBase",
+              { $max: [0, { $subtract: ["$favoritesCount", marks - delta] }] },
+            ],
+          },
+        },
+      },
+      { $set: { favoritesCount: { $add: ["$favoritesBase", marks] } } },
+    ],
+    { returnDocument: "after", updatePipeline: true },
+  )
+    .select("favoritesCount")
+    .lean();
+  return dish?.favoritesCount ?? marks;
+}
 
 export async function addFavorite(userId: string, rawDishId: string): Promise<FavoriteResult> {
   const dishId = await visibleDish(rawDishId);
   if (!dishId) return NOT_FOUND;
+  let delta = 1;
   try {
     await Favorite.create({ userId, dishId });
-    await Dish.updateOne({ _id: dishId }, { $inc: { favoritesCount: 1 } });
   } catch (err) {
-    // Duplicate key: the pair is already marked, so the counter was already bumped.
+    // Duplicate key: the pair is already marked.
     if ((err as { code?: number }).code !== 11000) throw err;
+    delta = 0;
   }
-  return { ok: true, favorited: true, favoritesCount: await currentCount(dishId) };
+  return { ok: true, favorited: true, favoritesCount: await syncCount(dishId, delta) };
 }
 
 export async function removeFavorite(userId: string, rawDishId: string): Promise<FavoriteResult> {
   const dishId = await visibleDish(rawDishId);
   if (!dishId) return NOT_FOUND;
   const { deletedCount } = await Favorite.deleteOne({ userId, dishId });
-  if (deletedCount === 1) await Dish.updateOne({ _id: dishId }, { $inc: { favoritesCount: -1 } });
-  return { ok: true, favorited: false, favoritesCount: await currentCount(dishId) };
+  return { ok: true, favorited: false, favoritesCount: await syncCount(dishId, -deletedCount) };
 }
 
 export async function toggleFavorite(userId: string, rawDishId: string): Promise<FavoriteResult> {

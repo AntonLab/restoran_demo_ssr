@@ -3,12 +3,14 @@
 import { useActionState, useState } from "react";
 import { type AuthFormState, registerAction } from "@/app/(auth)/actions";
 import { AuthField } from "@/components/auth/auth-field";
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { Button } from "@/components/ui/button";
 
 const idle: AuthFormState = { status: "idle" };
 
 export function RegisterForm({ next }: { next: string }) {
   const [state, action, pending] = useActionState(registerAction, idle);
+  const formRef = useFocusFirstError(state);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -16,7 +18,7 @@ export function RegisterForm({ next }: { next: string }) {
   const errors = state.status === "error" ? (state.fieldErrors ?? {}) : {};
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form ref={formRef} action={action} className="flex flex-col gap-4">
       <input type="hidden" name="next" value={next} />
       <AuthField
         id="register-email"

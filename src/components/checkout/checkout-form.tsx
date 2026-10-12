@@ -8,6 +8,7 @@ import { DeliveryFields } from "@/components/checkout/delivery-fields";
 import { SaveTemplateOption, TemplatePicker } from "@/components/checkout/template-fields";
 import { saveOffer, type TemplateView } from "@/lib/template-offer";
 import { ContactInput } from "@/components/feedback/field";
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
 import type { DeliveryDay } from "@/lib/delivery-time";
@@ -31,6 +32,7 @@ export function CheckoutForm({
   atLimit: boolean;
 }) {
   const [state, action, pending] = useActionState(checkoutAction, idle);
+  const formRef = useFocusFirstError(state);
   const [name, setName] = useState(defaults.name);
   const [phone, setPhone] = useState(defaults.phone);
   const [address, setAddress] = useState(defaults.address);
@@ -49,7 +51,7 @@ export function CheckoutForm({
   }
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form ref={formRef} action={action} className="flex flex-col gap-4">
       <input type="hidden" name="expectedTotalCents" value={totalCents} />
       {isUser && (
         <TemplatePicker templates={templates} value={templateId} onChange={pickTemplate} />

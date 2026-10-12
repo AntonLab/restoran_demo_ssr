@@ -5,6 +5,7 @@ import { bookingAction, type BookingFormState } from "@/app/booking/actions";
 import { AuthField } from "@/components/auth/auth-field";
 import { PreorderFields } from "@/components/booking/preorder-fields";
 import { SlotFields } from "@/components/booking/slot-fields";
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { Button } from "@/components/ui/button";
 import {
   type BookingDraft,
@@ -32,6 +33,7 @@ export function BookingForm({
   preorderDefault: boolean;
 }) {
   const [state, action, pending] = useActionState(bookingAction, idle);
+  const formRef = useFocusFirstError(state);
   const [name, setName] = useState(defaults.name);
   const [phone, setPhone] = useState(defaults.phone);
   const [guests, setGuests] = useState("2");
@@ -98,7 +100,7 @@ export function BookingForm({
   const errors = state.status === "error" ? (state.fieldErrors ?? {}) : {};
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form ref={formRef} action={action} className="flex flex-col gap-4">
       <AuthField
         id="booking-name"
         name="name"

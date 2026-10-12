@@ -1,3 +1,4 @@
+import { cache } from "react";
 import mongoose from "mongoose";
 import type { MenuFilters, MenuSort } from "@/lib/menu-params";
 import { connectDb } from "@/server/db";
@@ -57,8 +58,10 @@ const SORTS: Record<MenuSort, Record<string, 1 | -1>> = {
 
 export const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-export const activeCategoryIds = async () =>
-  (await Category.find({ status: "active" }).select("_id").lean()).map((c) => c._id);
+// cache(): the Menu, Cart and Favorites checks of one request share one read.
+export const activeCategoryIds = cache(async () =>
+  (await Category.find({ status: "active" }).select("_id").lean()).map((c) => c._id),
+);
 
 export async function getMenuSections(filters: MenuFilters): Promise<MenuSection[]> {
   await connectDb();

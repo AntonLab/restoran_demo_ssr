@@ -75,6 +75,7 @@ const mkOrder = (userId: string | null, patch: Record<string, unknown> = {}) =>
     totalCents: 1700,
     status: "new",
     history: [{ status: "new", at: new Date() }],
+    guestCid: CID,
     ...patch,
   });
 
@@ -118,6 +119,21 @@ describe("afterSignIn", () => {
   });
 });
 
+const mkBooking = () =>
+  Booking.create({
+    number: 1,
+    viewToken: "token-1",
+    userId: null,
+    contact: { name: "Ann", phone: "+15551234567" },
+    startsAt: new Date("2030-01-01T12:00:00Z"),
+    guests: 2,
+    items: [],
+    totalCents: 0,
+    status: "new",
+    history: [{ status: "new", at: new Date() }],
+    guestCid: CID,
+  });
+
 describe("afterRegister", () => {
   test("attaches Guest Orders by phone and merges the Cart", async () => {
     const u = uid();
@@ -128,23 +144,22 @@ describe("afterRegister", () => {
     expect(String((await Order.findOne().lean())!.userId)).toBe(u);
     expect((await getCart(userCartKey(u))).count).toBe(1);
   });
-  test("attaches Guest Bookings by phone", async () => {
+  test("attaches Guest Bookings by phone from the same browser", async () => {
     const u = uid();
-    await Booking.create({
-      number: 1,
-      viewToken: "token-1",
-      userId: null,
-      contact: { name: "Ann", phone: "+15551234567" },
-      startsAt: new Date("2030-01-01T12:00:00Z"),
-      guests: 2,
-      items: [],
-      totalCents: 0,
-      status: "new",
-      history: [{ status: "new", at: new Date() }],
-    });
-    hasCookie(undefined);
+    await mkBooking();
+    hasCookie(CID);
     await afterRegister(u, "+15551234567");
     expect(String((await Booking.findOne().lean())!.userId)).toBe(u);
+  });
+  test("another browser or no cookie attaches nothing", async () => {
+    await mkBooking();
+    await mkOrder(null);
+    for (const cookie of ["aaaaaaaa-9d4a-4e6b-8a1c-0d5e7f9a2b34", "forged", undefined]) {
+      hasCookie(cookie);
+      await afterRegister(uid(), "+15551234567");
+    }
+    expect((await Booking.findOne().lean())!.userId).toBeNull();
+    expect((await Order.findOne().lean())!.userId).toBeNull();
   });
   test("a failing Booking attach is logged; Orders attach and the Cart merge still run", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});

@@ -40,36 +40,76 @@ async function mkDish(patch: Record<string, unknown> = {}, categoryStatus = "act
 const count = async (id: string) => (await Dish.findById(id).lean())!.favoritesCount;
 
 describe("addFavorite / removeFavorite", () => {
-  test("adds once, counter goes up by 1 from the Seed base", async () => {
+  test("adds once, the count is the number of marks", async () => {
     const dish = await mkDish();
     const user = uid();
-    expect(await addFavorite(user, dish)).toEqual({ ok: true, favorited: true, favoritesCount: 6 });
-    expect(await addFavorite(user, dish)).toEqual({ ok: true, favorited: true, favoritesCount: 6 });
-    expect(await count(dish)).toBe(6);
+    expect(await addFavorite(user, dish)).toEqual({ ok: true, favorited: true, favoritesCount: 1 });
+    expect(await addFavorite(user, dish)).toEqual({ ok: true, favorited: true, favoritesCount: 1 });
+    expect(await addFavorite(uid(), dish)).toMatchObject({ favoritesCount: 2 });
+    expect(await count(dish)).toBe(2);
   });
-  test("10 parallel adds of one pair give +1", async () => {
+  test("10 parallel adds of one pair give 1", async () => {
     const dish = await mkDish();
     const user = uid();
     const results = await Promise.all(Array.from({ length: 10 }, () => addFavorite(user, dish)));
     expect(results.every((r) => r.ok)).toBe(true);
-    expect(await count(dish)).toBe(6);
+    expect(await count(dish)).toBe(1);
     expect(await Favorite.countDocuments()).toBe(1);
   });
-  test("removing twice lowers the counter once and never below the base", async () => {
+  test("removing twice lowers the count once", async () => {
     const dish = await mkDish();
-    const user = uid();
+    const [user, other] = [uid(), uid()];
     await addFavorite(user, dish);
+    await addFavorite(other, dish);
     expect(await removeFavorite(user, dish)).toEqual({
       ok: true,
       favorited: false,
-      favoritesCount: 5,
+      favoritesCount: 1,
     });
     expect(await removeFavorite(user, dish)).toEqual({
       ok: true,
       favorited: false,
-      favoritesCount: 5,
+      favoritesCount: 1,
     });
-    expect(await removeFavorite(uid(), dish)).toMatchObject({ favoritesCount: 5 });
+    expect(await removeFavorite(uid(), dish)).toMatchObject({ favoritesCount: 1 });
+  });
+  test("a seeded base survives toggles: add gives N+1, remove gives N", async () => {
+    const dish = await mkDish({ favoritesBase: 41, favoritesCount: 41 });
+    const user = uid();
+    expect(await addFavorite(user, dish)).toMatchObject({ favoritesCount: 42 });
+    expect(await removeFavorite(user, dish)).toMatchObject({ favoritesCount: 41 });
+    expect(await count(dish)).toBe(41);
+  });
+  test("a Dish from an older Seed without favoritesBase keeps its count as the base", async () => {
+    const dish = await mkDish({ favoritesCount: 33 });
+    await Dish.collection.updateOne(
+      { _id: new mongoose.Types.ObjectId(dish) },
+      { $unset: { favoritesBase: "" } },
+    );
+    const user = uid();
+    expect(await addFavorite(user, dish)).toMatchObject({ favoritesCount: 34 });
+    expect((await Dish.findById(dish).lean())!.favoritesBase).toBe(33);
+    expect(await removeFavorite(user, dish)).toMatchObject({ favoritesCount: 33 });
+  });
+  test("a stale count heals to base + marks", async () => {
+    const dish = await mkDish({ favoritesBase: 10, favoritesCount: 99 });
+    expect(await addFavorite(uid(), dish)).toMatchObject({ favoritesCount: 11 });
+    expect(await count(dish)).toBe(11);
+  });
+  test("a stale count heals on the next add", async () => {
+    const dish = await mkDish({ favoritesCount: 40 });
+    expect(await addFavorite(uid(), dish)).toMatchObject({ favoritesCount: 1 });
+    expect(await count(dish)).toBe(1);
+  });
+  test("a stale count heals on the next remove", async () => {
+    const dish = await mkDish({ favoritesCount: 0 });
+    const [a, b] = [uid(), uid()];
+    await Favorite.create([
+      { userId: a, dishId: dish },
+      { userId: b, dishId: dish },
+    ]);
+    expect(await removeFavorite(a, dish)).toMatchObject({ favoritesCount: 1 });
+    expect(await count(dish)).toBe(1);
   });
   test.each([
     ["inactive Dish", { status: "inactive" }, "active"],
@@ -92,8 +132,8 @@ describe("addFavorite / removeFavorite", () => {
 test("toggleFavorite flips the state", async () => {
   const dish = await mkDish();
   const user = uid();
-  expect(await toggleFavorite(user, dish)).toMatchObject({ favorited: true, favoritesCount: 6 });
-  expect(await toggleFavorite(user, dish)).toMatchObject({ favorited: false, favoritesCount: 5 });
+  expect(await toggleFavorite(user, dish)).toMatchObject({ favorited: true, favoritesCount: 1 });
+  expect(await toggleFavorite(user, dish)).toMatchObject({ favorited: false, favoritesCount: 0 });
 });
 
 test("listFavoriteDishes is newest first and hides invisible Dishes; favoriteDishIds lists all marks", async () => {

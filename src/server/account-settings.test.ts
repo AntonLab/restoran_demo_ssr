@@ -56,6 +56,13 @@ test("changeEmail needs the current password and a free address", async () => {
   ).toEqual({ ok: true });
   expect((await User.findById(id))!.email).toBe("new@b.io");
 });
+test("changeEmail checks the password before uniqueness, so a taken address is not revealed", async () => {
+  const id = await mk("a@b.io");
+  await mk("taken@b.io");
+  expect(
+    await changeEmail(id, { email: "taken@b.io", currentPassword: "nope" }, lim()),
+  ).toMatchObject(wrongPassword);
+});
 test("changePassword checks the current one and keeps only the current Session", async () => {
   const id = await mk("a@b.io");
   const current = await createSessionRecord(id);

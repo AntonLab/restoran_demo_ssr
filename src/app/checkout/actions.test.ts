@@ -11,6 +11,7 @@ import { Dish } from "@/server/models/dish";
 import { Order } from "@/server/models/order";
 import { OrderTemplate } from "@/server/models/order-template";
 import { clearTestDb, startTestDb, stopTestDb } from "@/server/test/db";
+import { formOf } from "@/server/test/form";
 
 vi.mock("@/server/queries/settings", () => ({
   getSettings: async () => ({
@@ -65,11 +66,7 @@ const BASE = {
   deliveryTime: "11:15",
   expectedTotalCents: "850",
 };
-const fd = (patch: Record<string, string> = {}) => {
-  const form = new FormData();
-  for (const [k, v] of Object.entries({ ...BASE, ...patch })) form.append(k, v);
-  return form;
-};
+const fd = (patch: Record<string, string> = {}) => formOf({ ...BASE, ...patch });
 
 describe("checkoutAction", () => {
   test("a Guest order redirects to the confirmation and revalidates", async () => {

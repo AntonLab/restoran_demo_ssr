@@ -3,12 +3,14 @@
 import { useActionState, useState } from "react";
 import { type AuthFormState, forgotPasswordAction } from "@/app/(auth)/actions";
 import { AuthField } from "@/components/auth/auth-field";
+import { useFocusFirstError } from "@/components/use-focus-first-error";
 import { Button } from "@/components/ui/button";
 
 const idle: AuthFormState = { status: "idle" };
 
 export function ForgotPasswordForm() {
   const [state, action, pending] = useActionState(forgotPasswordAction, idle);
+  const formRef = useFocusFirstError(state);
   const [email, setEmail] = useState("");
 
   if (state.status === "sent") {
@@ -19,7 +21,7 @@ export function ForgotPasswordForm() {
   const errors = state.status === "error" ? (state.fieldErrors ?? {}) : {};
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form ref={formRef} action={action} className="flex flex-col gap-4">
       <AuthField
         id="forgot-email"
         name="email"

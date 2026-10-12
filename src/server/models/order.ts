@@ -16,6 +16,8 @@ const orderSchema = new Schema(
     number: { type: Number, required: true, unique: true, validate: Number.isInteger },
     viewToken: { type: String, required: true, select: false },
     userId: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    // The placing browser's cid: a Guest Order attaches only to a User registering from it.
+    guestCid: { type: String, default: null, select: false },
     customer: {
       name: { type: String, required: true },
       phone: { type: String, required: true },

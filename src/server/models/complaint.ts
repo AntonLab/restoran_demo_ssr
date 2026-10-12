@@ -1,6 +1,6 @@
 import mongoose, { Schema, type InferSchemaType, type Model } from "mongoose";
 
-export const COMPLAINT_STATUSES = ["new", "in_review", "resolved"] as const;
+const COMPLAINT_STATUSES = ["new", "in_review", "resolved"] as const;
 
 const complaintSchema = new Schema(
   {
@@ -12,6 +12,8 @@ const complaintSchema = new Schema(
   },
   { timestamps: true },
 );
+
+complaintSchema.index({ status: 1, createdAt: -1 });
 
 type ComplaintDoc = InferSchemaType<typeof complaintSchema>;
 
