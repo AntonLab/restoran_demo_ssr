@@ -2,7 +2,6 @@
 paths:
   - ".claude/settings.json"
   - ".claude/skills/db-reset/**"
-  - ".mcp.json"
   - ".gitignore"
   - "skills-lock.json"
   - "scripts/link-skills.mjs"
@@ -42,9 +41,10 @@ Ported from `books_demo_spa`; the same rules hold unless noted.
 - **`.claude/agents/`** stays ignored and empty: the pipeline agents come
   from the `swarm` plugin as `swarm:<name>`. Copies left there from before
   the plugin are stale; delete them.
-- **`.mcp.json`** starts Playwright through `node -e` spawning `npx` with
-  `shell: true`: Claude Code spawns without a shell, and a bare `npx` fails on
-  Windows (it is `npx.cmd`).
+- **No `.mcp.json`.** The `swarm` plugin (1.2.0+) starts the Playwright MCP
+  server that `ui-checker` drives; a project `playwright` server beside it
+  makes the session run two browsers. The plugin's server writes to
+  `.playwright-mcp/`, which stays git-ignored.
 - **Plugins are project dependencies.** `enabledPlugins` makes Claude Code
   offer superpowers, mattpocock-skills, code-review, ponytail, caveman and swarm
   on a fresh clone. The agents preload `caveman`, `tdd`, `ponytail` and

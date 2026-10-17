@@ -26,12 +26,14 @@ English, money is USD stored as integer cents.
 - Documenting a command, script or dependency that `package.json` lacks.
 - Growing this file past ~200 lines: a new trap goes into a `.claude/rules/`
   file with `paths:` naming the files it concerns.
-- A comment that says _what_ the code does. Comments carry why, what breaks
-  otherwise, or an upstream bug.
 - `any` (use `unknown`), `@ts-ignore` (use `@ts-expect-error` with a reason),
   `enum` (use `as const`), class components, `dangerouslySetInnerHTML`.
+  oxlint refuses all but `enum`.
 - Floats for money; a role check only in the UI (every Server Action and
   Route Handler checks the session and role itself).
+
+Judgement-call rules live in `CODING_STANDARDS.md`. Only the task and final
+reviewers read it; implementers do not, so a rule there costs no context.
 
 ## Workflow
 

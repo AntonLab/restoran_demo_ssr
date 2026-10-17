@@ -10,7 +10,11 @@
     "react/exhaustive-deps": "warn",
     "react/react-in-jsx-scope": "off",
     "no-underscore-dangle": ["warn", { "allow": ["_id"] }],
-    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css"] }]
+    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css"] }],
+    "typescript/no-explicit-any": "error",
+    "typescript/ban-ts-comment": "error",
+    "react/no-danger": "error",
+    "react/prefer-function-component": "error"
   },
   "env": {
     "browser": true,
