@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Restoran Demo SSR
 
-## Getting Started
+A restaurant demo site rendered on the server: public menu, delivery orders,
+table bookings, reviews and complaints, user account and admin area. UI text is
+English, money is USD stored as integer cents.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 (App Router), React 19, TypeScript
+- Tailwind 4, shadcn/ui on `@base-ui/react`
+- MongoDB + Mongoose, zod
+- Server Actions for mutations, Route Handlers for image delivery, sharp
+- Own auth: cookie sessions, bcrypt, session tokens stored as SHA-256
+- Vitest + mongodb-memory-server, oxlint, oxfmt
+
+## Requirements
+
+- Node >= 24 (see `.nvmrc`)
+- A running MongoDB instance
+
+## Getting started
 
 ```bash
+npm install
+cp .env.example .env.local   # then edit the values
+npm run seed                 # menu, settings and the admin account
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Set in `.env.local` (git-ignored). See `.env.example`.
 
-## Learn More
+| Variable         | Purpose                                                              |
+| ---------------- | -------------------------------------------------------------------- |
+| `MONGODB_URI`    | MongoDB connection string                                            |
+| `ADMIN_EMAIL`    | Admin account email, created only by `npm run seed`                  |
+| `ADMIN_PASSWORD` | Admin account password                                               |
+| `APP_BASE_URL`   | Base for links in emails (password reset)                            |
+| `TRUST_PROXY`    | Number of reverse proxies in front of the app; unset ignores proxies |
+| `UPLOADS_DIR`    | Optional. Where uploaded images live; defaults to `uploads/`         |
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Command                | What it does                                 |
+| ---------------------- | -------------------------------------------- |
+| `npm run dev`          | Start the dev server                         |
+| `npm run build`        | Production build                             |
+| `npm start`            | Run the production build                     |
+| `npm run seed`         | Seed the database                            |
+| `npm test`             | Run tests once (`test:watch` to watch)       |
+| `npm run typecheck`    | `next typegen` and `tsc --noEmit`            |
+| `npm run lint`         | oxlint (`lint:fix` to autofix)               |
+| `npm run format`       | oxfmt (`format:check` to verify)             |
+| `npm run branch:check` | Check the branch setup before work or a PR   |
+| `npm run worktree`     | Create or remove a git worktree for a branch |
+| `npm run skills`       | Restore project agent skills after a clone   |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project layout
 
-## Deploy on Vercel
+- `src/app/` — routes: menu, cart, checkout, booking, feedback, auth, account, admin, image route
+- `src/components/` — UI components, grouped by feature
+- `src/server/` — models, queries, auth, mail, rate limiting, seed data
+- `src/lib/` — shared helpers and view logic
+- `seed/` — seed runner and dish images
+- `docs/` — specs, plans and agent notes
+- `scripts/` — plain Node helper scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Contributing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Branch from `dev` and open the PR against `dev`; `main` only receives `dev`.
+- Conventional commits: `feat:`, `fix:`, `refactor:`, `chore:`, `docs:`, `test:`, `ci:`.
+- CI runs lint, format check, typecheck, tests and build on every PR.
+- Domain terms are defined in [CONTEXT.md](CONTEXT.md); coding rules in
+  [CODING_STANDARDS.md](CODING_STANDARDS.md).
