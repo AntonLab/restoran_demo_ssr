@@ -1,4 +1,4 @@
-# Claude Code — restoran_demo_ssr
+# Claude Code — restoran_ssr
 
 Restaurant demo site rendered on the server: public menu, delivery orders,
 table bookings, reviews and complaints, user account and admin. UI text is
